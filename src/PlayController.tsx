@@ -102,7 +102,7 @@ const PlayController = () => {
         console.warn('Failed to sync data to IndexedDB', err);
       }
     }, 900);
-  }, []);
+  }, [emulator]);
 
   const attachCallbacks = useCallback(
     (instance: mGBAEmulator) => {
@@ -133,14 +133,12 @@ const PlayController = () => {
   useEffect(() => {
     if (!emulator) return;
     emulator.setCoreSettings({
-      audioSync: performanceMode === 'quality',
-      videoSync: performanceMode === 'quality',
-      timestepSync: performanceMode === 'quality',
+      videoSync: true,
+      showFpsCounter: true,
       threadedVideo: true,
-      audioBufferSize: performanceMode === 'performance' ? 2048 : 1024,
     });
     persistSettings();
-  }, [performanceMode, persistSettings]);
+  }, [performanceMode, persistSettings, emulator]);
 
   const handleKeyboard = useCallback(
     (event: KeyboardEvent, action: 'press' | 'release') => {

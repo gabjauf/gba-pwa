@@ -83,7 +83,6 @@ const HomeView = ({
             <p className="eyebrow">ROMs & library</p>
             <h2>Load, persist, and resume</h2>
           </div>
-          <div className="muted small">Drag-and-drop supported</div>
         </div>
 
         <div className="dropzone">

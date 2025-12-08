@@ -11,7 +11,6 @@ async function initialize(canvas: HTMLCanvasElement) {
     canvas
   }).then(async (mod) => {
     await mod.FSInit();
-    console.log(mod)
     instance = mod;
     return mod;
   })
