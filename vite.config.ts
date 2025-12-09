@@ -27,9 +27,6 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       minify: false,
-      // strategies: 'injectManifest',
-      // srcDir: 'src',
-      // filename: 'sw.ts',
       includeAssets: [
         'icons/icon-192.png',
         'icons/icon-512.png',
@@ -44,7 +41,7 @@ export default defineConfig({
         background_color: '#050712',
         display: 'standalone',
         orientation: 'landscape',
-        start_url: '/',
+        start_url: '/gba-pwa/',
         icons: [
           {
             src: '/icons/icon-192.png',
