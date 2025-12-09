@@ -1,5 +1,5 @@
 import type { mGBAEmulator } from '@thenick775/mgba-wasm';
-import mGBA from '../mgba';
+import mGBA from '@thenick775/mgba-wasm';
 import { createContext, useEffect, useRef, useState } from 'react';
 
 
@@ -22,7 +22,7 @@ export function getEmulator(canvas: HTMLCanvasElement): Promise<mGBAEmulator | n
   return initialize(canvas)
 }
 
-export const EmulatorContext = ({ children }) => {
+export const EmulatorContext = ({ children }: { children: React.ReactNode }) => {
   const [emulator, setEmulator] = useState<mGBAEmulator | null>(null);
   const canvasRef = useRef(document.createElement('canvas'));
 

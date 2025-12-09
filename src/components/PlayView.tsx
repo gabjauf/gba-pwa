@@ -1,5 +1,4 @@
-import { useContext, useEffect, useRef, type RefObject } from 'react';
-import type { mGBAEmulator } from '@thenick775/mgba-wasm';
+import { useContext, useEffect, useRef } from 'react';
 import { GBAContext } from '../emulator/useEmulator';
 
 export type Status = {
@@ -24,7 +23,6 @@ export type PlayViewProps = {
 const PlayView = ({
   activeRom,
   isPaused,
-  status,
   showGamepad,
   onPauseToggle,
   onReset,
@@ -45,8 +43,7 @@ const PlayView = ({
 
     // 2. IMPORTANT: Ensure canvas style fits container
     canvas.style.display = 'block';
-    canvas.style.width = '100%';
-    canvas.style.height = '100%';
+    canvas.style.height = 'min(100vh, 100vw)';
 
     // Cleanup: When this component unmounts...
     return () => {
@@ -56,27 +53,20 @@ const PlayView = ({
     };
   }, [canvas]);
 
-  console.log(emulator);
-
   return (
     <section
       className="panel stage play-panel"
       style={{ display: showCanvas ? 'block' : 'none' }}
       aria-hidden={!showCanvas}
     >
-      <div className="panel-head">
-        <div>
-          <p className="eyebrow">Emulator</p>
-          <h2>{activeRom ?? 'Awaiting ROM'}</h2>
-          <p className="muted small">{status.message}</p>
-        </div>
+      {/* <div className="panel-head">
         <div className="muted small">
           Keyboard: arrows, Z/X, A/S, Shift (Select), Enter/Space (Start)
         </div>
-      </div>
+      </div> */}
 
       <div className="canvas-shell full">
-        <div ref={containerRef} style={{ background: '#000' }} />
+        <div className="canvas-container" ref={containerRef} style={{ background: '#000' }} />
         <div className="overlay top">
           <span className="badge ghost">{activeRom ?? 'No ROM loaded'}</span>
           <div className="inline-actions">

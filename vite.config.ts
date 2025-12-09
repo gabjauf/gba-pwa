@@ -1,21 +1,35 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { createHtmlPlugin } from 'vite-plugin-html';
 
 const coopCoepHeaders = {
   'Cross-Origin-Opener-Policy': 'same-origin',
-  'Cross-Origin-Embedder-Policy': 'require-corp',
+  // 'Cross-Origin-Embedder-Policy': 'require-corp',
+  'Cross-Origin-Embedder-Policy': 'credentialless',
 };
 
 export default defineConfig({
+  base: process.env.NODE_ENV === 'production' ? '/gba-pwa/' : '/',
   plugins: [
     react(),
+    createHtmlPlugin({
+      inject: {
+        tags: [
+          {
+            tag: 'script',
+            attrs: { src: 'coi-sw.js' },
+            injectTo: 'head-prepend'
+          }
+        ]
+      }
+    }),
     VitePWA({
       registerType: 'autoUpdate',
       minify: false,
-      strategies: 'injectManifest',
-      srcDir: 'src',
-      filename: 'sw.ts',
+      // strategies: 'injectManifest',
+      // srcDir: 'src',
+      // filename: 'sw.ts',
       includeAssets: [
         'icons/icon-192.png',
         'icons/icon-512.png',
@@ -50,13 +64,25 @@ export default defineConfig({
           },
         ],
       },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,wasm}'],
+        navigateFallbackDenylist: [/^\/admin/]
+      },
+      injectRegister: null,
+      strategies: 'injectManifest',
+      srcDir: 'src/service-worker',
+      filename: 'coi-sw.ts',
       injectManifest: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}'],
+        injectionPoint: undefined
+        // globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}'],
       },
     }),
   ],
   server: {
     headers: coopCoepHeaders,
+  },
+  optimizeDeps: {
+    exclude: ['@thenick775/mgba-wasm']
   },
   preview: {
     headers: coopCoepHeaders,

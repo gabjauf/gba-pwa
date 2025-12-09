@@ -1,4 +1,3 @@
-import { type mGBAEmulator } from '@thenick775/mgba-wasm';
 import { useCallback, useContext, useEffect, useRef, useState, type DragEvent } from 'react';
 import HomeView from './components/HomeView';
 import PlayView from './components/PlayView';
@@ -35,7 +34,7 @@ const PlayController = () => {
   const { emulator } = useContext(GBAContext);
   console.log(emulator);
   const syncTimer = useRef<number | null>(null);
-  const [booting, setBooting] = useState(false);
+  const [booting] = useState(false);
   const [roms, setRoms] = useState<string[]>([]);
   const [activeRom, setActiveRom] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>({
@@ -86,7 +85,7 @@ const PlayController = () => {
     [activeRom, performanceMode, showGamepad, volume]
   );
 
-  const refreshRoms = useCallback((instance?: mGBAEmulator) => {
+  const refreshRoms = useCallback(() => {
     if (!emulator) return;
     const list = filterEntries(emulator.listRoms()).sort((a, b) => a.localeCompare(b));
     setRoms(list);
@@ -104,26 +103,26 @@ const PlayController = () => {
     }, 900);
   }, [emulator]);
 
-  const attachCallbacks = useCallback(
-    (instance: mGBAEmulator) => {
-      instance.addCoreCallbacks({
-        saveDataUpdatedCallback: scheduleSync,
-        autoSaveStateCapturedCallback: () => {
-          setLastAutoSave(formatTime(new Date()));
-          scheduleSync();
-          setStatus({ message: 'Captured auto-save', tone: 'success' });
-        },
-        autoSaveStateLoadedCallback: () =>
-          setStatus({ message: 'Restored auto-save', tone: 'success' }),
-        coreCrashedCallback: () =>
-          setStatus({
-            message: 'mGBA reported a crash. Try reloading the ROM.',
-            tone: 'warn',
-          }),
-      });
-    },
-    [scheduleSync]
-  );
+  // const attachCallbacks = useCallback(
+  //   (instance: mGBAEmulator) => {
+  //     instance.addCoreCallbacks({
+  //       saveDataUpdatedCallback: scheduleSync,
+  //       autoSaveStateCapturedCallback: () => {
+  //         setLastAutoSave(formatTime(new Date()));
+  //         scheduleSync();
+  //         setStatus({ message: 'Captured auto-save', tone: 'success' });
+  //       },
+  //       autoSaveStateLoadedCallback: () =>
+  //         setStatus({ message: 'Restored auto-save', tone: 'success' }),
+  //       coreCrashedCallback: () =>
+  //         setStatus({
+  //           message: 'mGBA reported a crash. Try reloading the ROM.',
+  //           tone: 'warn',
+  //         }),
+  //     });
+  //   },
+  //   [scheduleSync]
+  // );
 
   useEffect(() => {
     if (!emulator) return;
@@ -135,7 +134,7 @@ const PlayController = () => {
     emulator.setCoreSettings({
       videoSync: true,
       showFpsCounter: true,
-      threadedVideo: true,
+      threadedVideo: false,
     });
     persistSettings();
   }, [performanceMode, persistSettings, emulator]);
@@ -315,28 +314,13 @@ const PlayController = () => {
 
   return (
     <div className={`page ${view === 'play' ? 'play-mode' : ''}`}>
-      <div className="topbar">
-        <div className="brand">
-          <span className="pill">mGBA • PWA</span>
+      {view !== 'play' &&
+        <div className="topbar">
+          <div className="brand">
+            <span className="pill">mGBA • PWA</span>
+          </div>
         </div>
-        <div className="top-actions">
-          <button
-            className={`ghost ${view === 'home' ? 'active' : ''}`}
-            onClick={() => setView('home')}
-            type="button"
-          >
-            Home
-          </button>
-          <button
-            className={`ghost ${view === 'play' ? 'active' : ''}`}
-            onClick={() => setView('play')}
-            type="button"
-            disabled={!activeRom}
-          >
-            Play
-          </button>
-        </div>
-      </div>
+      }
 
       {view === 'home' && (
         <HomeView
