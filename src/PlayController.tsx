@@ -132,9 +132,13 @@ const PlayController = () => {
   useEffect(() => {
     if (!emulator) return;
     emulator.setCoreSettings({
-      videoSync: true,
-      showFpsCounter: true,
+      audioSampleRate: 48000,
+      audioBufferSize: 1024,
+      timestepSync: true,
+      videoSync: false,
+      audioSync: false,
       threadedVideo: false,
+      showFpsCounter: true,
     });
     persistSettings();
   }, [performanceMode, persistSettings, emulator]);
