@@ -2,7 +2,7 @@
   "name": "GBA Studio (mGBA PWA)",
   "short_name": "GBA Studio",
   "description": "A polished offline-ready wrapper around the mGBA core with touch controls and quick saves.",
-  "start_url": "/",
+  "start_url": "/gba-pwa/",
   "display": "standalone",
   "background_color": "#050712",
   "theme_color": "#0c1021",
