@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/gba-pwa/sw.js', { scope: '/gba-pwa/' })})}

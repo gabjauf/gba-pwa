@@ -1,0 +1,30 @@
+{
+  "name": "GBA Studio (mGBA PWA)",
+  "short_name": "GBA Studio",
+  "description": "A polished offline-ready wrapper around the mGBA core with touch controls and quick saves.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050712",
+  "theme_color": "#0c1021",
+  "lang": "en",
+  "scope": "/gba-pwa/",
+  "orientation": "landscape",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
