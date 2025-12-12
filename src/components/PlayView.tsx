@@ -34,6 +34,7 @@ const PlayView = ({
 }: PlayViewProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const { canvas, emulator } = useContext(GBAContext);
+  const isGbcRom = !!activeRom && /\.(gbc|gb)$/i.test(activeRom);
 
   useEffect(() => {
     if (!containerRef.current || !canvas) return;
@@ -42,20 +43,50 @@ const PlayView = ({
     containerRef.current?.appendChild(canvas);
 
     // 2. IMPORTANT: Ensure canvas style fits container
+    canvas.classList.add('emulator-canvas', 'full');
     canvas.style.display = 'block';
-    canvas.style.height = 'min(100vh, 100vw)';
+    canvas.style.width = '';
+    canvas.style.height = '';
+
+    const aspect = isGbcRom ? 10 / 9 : 3 / 2;
+    const resizeToFit = () => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const boxWidth = rect.width;
+      const boxHeight = rect.height;
+      if (!boxWidth || !boxHeight) return;
+      let width = boxWidth;
+      let height = width / aspect;
+      if (height > boxHeight) {
+        height = boxHeight;
+        width = height * aspect;
+      }
+      canvas.style.width = `${Math.floor(width)}px`;
+      canvas.style.height = `${Math.floor(height)}px`;
+    };
+
+    resizeToFit();
+
+    let observer: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver(resizeToFit);
+      observer.observe(containerRef.current);
+    }
+    window.addEventListener('resize', resizeToFit);
 
     // Cleanup: When this component unmounts...
     return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', resizeToFit);
       // Option A: Leave it (React will remove the container, detaching the canvas)
       // Option B: Move canvas back to a hidden 'storage' div if needed
       // DO NOT destroy the canvas element itself
     };
-  }, [canvas]);
+  }, [canvas, isGbcRom]);
 
   return (
     <section
-      className="panel stage play-panel"
+      className={`panel stage play-panel gameboy-view ${isGbcRom ? 'mode-gbc' : 'mode-gba'}`}
       style={{ display: showCanvas ? 'block' : 'none' }}
       aria-hidden={!showCanvas}
     >
@@ -65,150 +96,174 @@ const PlayView = ({
         </div>
       </div> */}
 
-      <div className="canvas-shell full">
-        <div className="canvas-container" ref={containerRef} style={{ background: '#000' }} />
-        <div className="overlay top">
-          <span className="badge ghost">{activeRom ?? 'No ROM loaded'}</span>
-          <div className="inline-actions">
+      <div className="gameboy-shell">
+        <div className="gameboy-screen">
+          <div className="canvas-shell full">
+            <div className="canvas-container" ref={containerRef} style={{ background: '#000' }} />
+          </div>
+        </div>
+
+        <div className="gameboy-toolbar">
+          <div className="toolbar-actions">
             <button
               type="button"
-              className="ghost"
+              className="ghost icon"
               disabled={!emulator || !activeRom}
               onClick={onPauseToggle}
+              title={isPaused ? 'Resume' : 'Pause'}
+              aria-label={isPaused ? 'Resume' : 'Pause'}
             >
-              {isPaused ? 'Resume' : 'Pause'}
+              {isPaused ? '▶' : '⏸'}
             </button>
             <button
               type="button"
-              className="ghost"
+              className="ghost icon"
               disabled={!emulator || !activeRom}
               onClick={onReset}
+              title="Reset"
+              aria-label="Reset"
             >
-              Reset
+              ↻
+            </button>
+            <button
+              type="button"
+              className="ghost icon"
+              disabled={!emulator || !activeRom}
+              onClick={onQuit}
+              title="Quit"
+              aria-label="Quit"
+            >
+              ⏹
+            </button>
+            <button
+              type="button"
+              className="ghost icon"
+              onClick={onSaveState}
+              disabled={!emulator || !activeRom}
+              title="Quick save"
+              aria-label="Quick save"
+            >
+              💾
+            </button>
+            <button
+              type="button"
+              className="ghost icon"
+              onClick={onLoadState}
+              disabled={!emulator || !activeRom}
+              title="Quick load"
+              aria-label="Quick load"
+            >
+              📂
             </button>
             <button
               type="button"
               className="ghost"
-              disabled={!emulator || !activeRom}
-              onClick={onQuit}
-            >
-              Quit
-            </button>
-          </div>
-        </div>
-        <div className="overlay bottom">
-          <div className="inline-actions">
-            <button
-              type="button"
-              className="accent"
-              onClick={onSaveState}
-              disabled={!emulator || !activeRom}
-            >
-              Quick save
-            </button>
-            <button
-              type="button"
-              onClick={onLoadState}
-              disabled={!emulator || !activeRom}
-            >
-              Quick load
-            </button>
-            <button
-              type="button"
               onClick={onAutoSave}
               disabled={!emulator || !activeRom}
+              title="Force auto-save"
             >
-              Force auto-save
+              Auto
             </button>
           </div>
-          <div className="muted small">Auto-save interval: 45s • Files live in IndexedDB</div>
+          <button
+            type="button"
+            className="ghost controls-hint"
+            title="Controls: D‑pad, A/B, L/R shoulders, Select/Start bottom. Keyboard: arrows, Z/X, A/S, Shift (Select), Enter/Space (Start)."
+            aria-label="Controls help"
+          >
+            🎮
+          </button>
         </div>
-      </div>
 
-      {showGamepad && (
-        <div className="gamepad">
-          <div className="dpad">
-            <button
-              type="button"
-              onPointerDown={() => emulator?.buttonPress('up')}
-              onPointerUp={() => emulator?.buttonUnpress('up')}
-            >
-              ▲
-            </button>
-            <div className="middle">
+        {showGamepad && (
+          <div className="gameboy-controls">
+            <div className="gamepad">
               <button
                 type="button"
-                onPointerDown={() => emulator?.buttonPress('left')}
-                onPointerUp={() => emulator?.buttonUnpress('left')}
+                className="shoulder left"
+                onPointerDown={() => emulator?.buttonPress('l')}
+                onPointerUp={() => emulator?.buttonUnpress('l')}
               >
-                ◀
+                L
               </button>
               <button
                 type="button"
-                onPointerDown={() => emulator?.buttonPress('right')}
-                onPointerUp={() => emulator?.buttonUnpress('right')}
+                className="shoulder right"
+                onPointerDown={() => emulator?.buttonPress('r')}
+                onPointerUp={() => emulator?.buttonUnpress('r')}
               >
-                ▶
+                R
               </button>
+              <div className="dpad">
+                <button
+                  type="button"
+                  onPointerDown={() => emulator?.buttonPress('up')}
+                  onPointerUp={() => emulator?.buttonUnpress('up')}
+                >
+                  ▲
+                </button>
+                <div className="middle">
+                  <button
+                    type="button"
+                    onPointerDown={() => emulator?.buttonPress('left')}
+                    onPointerUp={() => emulator?.buttonUnpress('left')}
+                  >
+                    ◀
+                  </button>
+                  <button
+                    type="button"
+                    onPointerDown={() => emulator?.buttonPress('right')}
+                    onPointerUp={() => emulator?.buttonUnpress('right')}
+                  >
+                    ▶
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onPointerDown={() => emulator?.buttonPress('down')}
+                  onPointerUp={() => emulator?.buttonUnpress('down')}
+                >
+                  ▼
+                </button>
+              </div>
+              <div className="actions">
+                <button
+                  type="button"
+                  className="accent"
+                  onPointerDown={() => emulator?.buttonPress('b')}
+                  onPointerUp={() => emulator?.buttonUnpress('b')}
+                >
+                  B
+                </button>
+                <button
+                  type="button"
+                  className="accent"
+                  onPointerDown={() => emulator?.buttonPress('a')}
+                  onPointerUp={() => emulator?.buttonUnpress('a')}
+                >
+                  A
+                </button>
+              </div>
+              <div className="meta">
+                <button
+                  type="button"
+                  onPointerDown={() => emulator?.buttonPress('select')}
+                  onPointerUp={() => emulator?.buttonUnpress('select')}
+                >
+                  Select
+                </button>
+                <button
+                  type="button"
+                  onPointerDown={() => emulator?.buttonPress('start')}
+                  onPointerUp={() => emulator?.buttonUnpress('start')}
+                >
+                  Start
+                </button>
+              </div>
             </div>
-            <button
-              type="button"
-              onPointerDown={() => emulator?.buttonPress('down')}
-              onPointerUp={() => emulator?.buttonUnpress('down')}
-            >
-              ▼
-            </button>
           </div>
-          <div className="actions">
-            <button
-              type="button"
-              className="accent"
-              onPointerDown={() => emulator?.buttonPress('b')}
-              onPointerUp={() => emulator?.buttonUnpress('b')}
-            >
-              B
-            </button>
-            <button
-              type="button"
-              className="accent"
-              onPointerDown={() => emulator?.buttonPress('a')}
-              onPointerUp={() => emulator?.buttonUnpress('a')}
-            >
-              A
-            </button>
-          </div>
-          <div className="meta">
-            <button
-              type="button"
-              onPointerDown={() => emulator?.buttonPress('l')}
-              onPointerUp={() => emulator?.buttonUnpress('l')}
-            >
-              L
-            </button>
-            <button
-              type="button"
-              onPointerDown={() => emulator?.buttonPress('r')}
-              onPointerUp={() => emulator?.buttonUnpress('r')}
-            >
-              R
-            </button>
-            <button
-              type="button"
-              onPointerDown={() => emulator?.buttonPress('select')}
-              onPointerUp={() => emulator?.buttonUnpress('select')}
-            >
-              Select
-            </button>
-            <button
-              type="button"
-              onPointerDown={() => emulator?.buttonPress('start')}
-              onPointerUp={() => emulator?.buttonUnpress('start')}
-            >
-              Start
-            </button>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </section>
   );
 };
