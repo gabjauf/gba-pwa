@@ -359,16 +359,21 @@
   image-rendering: pixelated;
 }
 
+.play-panel.gameboy-view .emulator-canvas.full {
+  height: auto !important;
+  min-height: 0 !important;
+}
+
 .play-panel.gameboy-view.mode-gba .emulator-canvas {
-  aspect-ratio: 3 / 2;
   width: 100%;
   height: auto;
+  aspect-ratio: 3 / 2;
 }
 
 .play-panel.gameboy-view.mode-gbc .emulator-canvas {
+  width: 100%;
+  height: auto;
   aspect-ratio: 10 / 9;
-  width: auto;
-  height: 100%;
 }
 
 .play-panel.gameboy-view .overlay {

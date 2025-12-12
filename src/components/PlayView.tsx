@@ -48,41 +48,13 @@ const PlayView = ({
     canvas.style.width = '';
     canvas.style.height = '';
 
-    const aspect = isGbcRom ? 10 / 9 : 3 / 2;
-    const resizeToFit = () => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const boxWidth = rect.width;
-      const boxHeight = rect.height;
-      if (!boxWidth || !boxHeight) return;
-      let width = boxWidth;
-      let height = width / aspect;
-      if (height > boxHeight) {
-        height = boxHeight;
-        width = height * aspect;
-      }
-      canvas.style.width = `${Math.floor(width)}px`;
-      canvas.style.height = `${Math.floor(height)}px`;
-    };
-
-    resizeToFit();
-
-    let observer: ResizeObserver | null = null;
-    if (typeof ResizeObserver !== 'undefined') {
-      observer = new ResizeObserver(resizeToFit);
-      observer.observe(containerRef.current);
-    }
-    window.addEventListener('resize', resizeToFit);
-
     // Cleanup: When this component unmounts...
     return () => {
-      observer?.disconnect();
-      window.removeEventListener('resize', resizeToFit);
       // Option A: Leave it (React will remove the container, detaching the canvas)
       // Option B: Move canvas back to a hidden 'storage' div if needed
       // DO NOT destroy the canvas element itself
     };
-  }, [canvas, isGbcRom]);
+  }, [canvas]);
 
   return (
     <section
