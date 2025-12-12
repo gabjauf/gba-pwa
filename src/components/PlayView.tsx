@@ -1,5 +1,6 @@
 import { useContext, useEffect, useRef } from 'react';
 import { GBAContext } from '../emulator/useEmulator';
+import DPad from './DPad';
 
 export type Status = {
   message: string;
@@ -166,38 +167,11 @@ const PlayView = ({
               >
                 R
               </button>
-              <div className="dpad">
-                <button
-                  type="button"
-                  onPointerDown={() => emulator?.buttonPress('up')}
-                  onPointerUp={() => emulator?.buttonUnpress('up')}
-                >
-                  ▲
-                </button>
-                <div className="middle">
-                  <button
-                    type="button"
-                    onPointerDown={() => emulator?.buttonPress('left')}
-                    onPointerUp={() => emulator?.buttonUnpress('left')}
-                  >
-                    ◀
-                  </button>
-                  <button
-                    type="button"
-                    onPointerDown={() => emulator?.buttonPress('right')}
-                    onPointerUp={() => emulator?.buttonUnpress('right')}
-                  >
-                    ▶
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  onPointerDown={() => emulator?.buttonPress('down')}
-                  onPointerUp={() => emulator?.buttonUnpress('down')}
-                >
-                  ▼
-                </button>
-              </div>
+              <DPad
+                onPress={(dir) => emulator?.buttonPress(dir)}
+                onUnpress={(dir) => emulator?.buttonUnpress(dir)}
+                disabled={!emulator}
+              />
               <div className="actions">
                 <button
                   type="button"
