@@ -1,6 +1,7 @@
 import { useContext, useEffect, useRef } from 'react';
 import { GBAContext } from '../emulator/useEmulator';
 import DPad from './DPad';
+import ActionPad from './ActionPad';
 
 export type Status = {
   message: string;
@@ -35,7 +36,8 @@ const PlayView = ({
 }: PlayViewProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const { canvas, emulator } = useContext(GBAContext);
-  const isGbcRom = !!activeRom && /\.(gbc|gb)$/i.test(activeRom);
+  const romNameForMode = (emulator?.gameName || activeRom || '').replace(/\.zip$/i, '');
+  const isGbcRom = /\.(gbc|gb)$/i.test(romNameForMode);
 
   useEffect(() => {
     if (!containerRef.current || !canvas) return;
@@ -166,30 +168,17 @@ const PlayView = ({
                 onPointerUp={() => emulator?.buttonUnpress('r')}
               >
                 R
-              </button>
+              </button> 
               <DPad
                 onPress={(dir) => emulator?.buttonPress(dir)}
                 onUnpress={(dir) => emulator?.buttonUnpress(dir)}
                 disabled={!emulator}
               />
-              <div className="actions">
-                <button
-                  type="button"
-                  className="accent"
-                  onPointerDown={() => emulator?.buttonPress('b')}
-                  onPointerUp={() => emulator?.buttonUnpress('b')}
-                >
-                  B
-                </button>
-                <button
-                  type="button"
-                  className="accent"
-                  onPointerDown={() => emulator?.buttonPress('a')}
-                  onPointerUp={() => emulator?.buttonUnpress('a')}
-                >
-                  A
-                </button>
-              </div>
+              <ActionPad
+                onPress={(btn) => emulator?.buttonPress(btn)}
+                onUnpress={(btn) => emulator?.buttonUnpress(btn)}
+                disabled={!emulator}
+              />
               <div className="meta">
                 <button
                   type="button"

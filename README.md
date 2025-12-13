@@ -6,10 +6,33 @@ A React + Vite progressive web app that wraps the `@thenick775/mgba-wasm` core w
 
 ```bash
 npm install
-npm run dev   # start the COOP/COEP-enabled dev server
+npm run dev   # start the dev server (HTTPS if certs exist)
 npm run build # type-check + production build
 npm run preview
 ```
+
+## iOS testing over LAN (HTTPS)
+
+iOS Safari requires a secure context for COOP/COEP + threads. When testing from your phone over the local network, use HTTPS:
+
+```bash
+# 1) Create a local trusted CA (once)
+mkcert -install
+
+# 2) Generate a cert that includes your Mac IP (replace the IP)
+mkdir -p certs
+mkcert -key-file certs/dev-key.pem -cert-file certs/dev.pem localhost 127.0.0.1 ::1 192.168.0.11
+
+# 3) Run Vite over HTTPS and bind to LAN
+npm run dev:https
+```
+
+Then open `https://192.168.0.11:5173` on your iPhone.
+
+Note: once `certs/dev.pem` + `certs/dev-key.pem` exist, `npm run dev` will automatically use HTTPS.
+
+If iOS still rejects the cert, install the mkcert root CA on the phone and enable it in:
+`Settings → General → About → Certificate Trust Settings`.
 
 ## Features
 

@@ -2,6 +2,9 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { createHtmlPlugin } from 'vite-plugin-html';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const coopCoepHeaders = {
   'Cross-Origin-Opener-Policy': 'same-origin',
@@ -9,7 +12,41 @@ const coopCoepHeaders = {
   'Cross-Origin-Embedder-Policy': 'credentialless',
 };
 
-export default defineConfig({
+const projectRoot = fileURLToPath(new URL('.', import.meta.url));
+const resolveFromRoot = (maybeRelativePath: string) =>
+  path.isAbsolute(maybeRelativePath)
+    ? maybeRelativePath
+    : path.resolve(projectRoot, maybeRelativePath);
+
+const loadHttpsConfig = () => {
+  const certFile = resolveFromRoot(process.env.VITE_SSL_CERT ?? 'certs/dev.pem');
+  const keyFile = resolveFromRoot(process.env.VITE_SSL_KEY ?? 'certs/dev-key.pem');
+  const hasCerts = fs.existsSync(certFile) && fs.existsSync(keyFile);
+  if (!hasCerts) return undefined;
+  return {
+    cert: fs.readFileSync(certFile),
+    key: fs.readFileSync(keyFile),
+  };
+};
+
+export default defineConfig(() => {
+  const explicitHttps = process.env.VITE_HTTPS === '1' || process.env.HTTPS === 'true';
+  const httpsConfig = explicitHttps ? loadHttpsConfig() : undefined;
+
+  if (explicitHttps && !httpsConfig && explicitHttps) {
+    const certFile = resolveFromRoot(process.env.VITE_SSL_CERT ?? 'certs/dev.pem');
+    const keyFile = resolveFromRoot(process.env.VITE_SSL_KEY ?? 'certs/dev-key.pem');
+    throw new Error(
+      [
+        'HTTPS is enabled (VITE_HTTPS=1) but certificate files were not found.',
+        `Expected cert: ${certFile}`,
+        `Expected key:  ${keyFile}`,
+        'Generate them with mkcert (see README) or set VITE_SSL_CERT/VITE_SSL_KEY.',
+      ].join('\n'),
+    );
+  }
+
+  return ({
   base: process.env.NODE_ENV === 'production' ? '/gba-pwa/' : '/',
   plugins: [
     react(),
@@ -77,6 +114,8 @@ export default defineConfig({
   ],
   server: {
     headers: coopCoepHeaders,
+    host: true,
+    https: httpsConfig,
   },
   optimizeDeps: {
     exclude: ['@thenick775/mgba-wasm']
@@ -84,4 +123,5 @@ export default defineConfig({
   preview: {
     headers: coopCoepHeaders,
   },
+});
 });
