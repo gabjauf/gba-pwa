@@ -48,7 +48,6 @@ const PlayController = () => {
   );
   const [isPaused, setIsPaused] = useState(true);
   const [lastAutoSave, setLastAutoSave] = useState<string | null>(null);
-  const [pwaReady] = useState(false);
   const [view, setView] = useState<'home' | 'play'>('home');
 
   useEffect(() => {
@@ -337,7 +336,6 @@ const PlayController = () => {
             loadRomFromPath(rom);
           }}
           booting={booting}
-          pwaReady={pwaReady}
           emulatorReady={!!emulator}
         />
       )}

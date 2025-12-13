@@ -10,7 +10,6 @@ export type HomeViewProps = {
   onRefresh: () => void;
   onLaunch: (rom: string) => void;
   booting: boolean;
-  pwaReady: boolean;
   emulatorReady: boolean;
 };
 
@@ -21,7 +20,6 @@ const HomeView = ({
   onDrop,
   onRefresh,
   onLaunch,
-  pwaReady,
   emulatorReady,
 }: HomeViewProps) => {
   const { emulator } = useContext(GBAContext);
@@ -54,13 +52,6 @@ const HomeView = ({
             >
               Refresh library
             </button>
-            <div className="badges">
-              {pwaReady ? (
-                <span className="badge success">PWA cached</span>
-              ) : (
-                <span className="badge ghost">Waiting for install</span>
-              )}
-            </div>
           </div>
         </div>
         <div className="status info">
