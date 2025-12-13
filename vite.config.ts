@@ -5,6 +5,7 @@ import { createHtmlPlugin } from 'vite-plugin-html';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { qrcode } from 'vite-plugin-qrcode';
 
 const coopCoepHeaders = {
   'Cross-Origin-Opener-Policy': 'same-origin',
@@ -49,6 +50,7 @@ export default defineConfig(() => {
   return ({
   base: process.env.NODE_ENV === 'production' ? '/gba-pwa/' : '/',
   plugins: [
+    qrcode(),
     react(),
     createHtmlPlugin({
       inject: {
