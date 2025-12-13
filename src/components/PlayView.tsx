@@ -1,8 +1,18 @@
-import { useContext, useEffect, useRef } from 'react';
+import { useCallback, useContext, useEffect, useRef } from 'react';
 import { GBAContext } from '../emulator/useEmulator';
 import DPad from './DPad';
 import ActionPad from './ActionPad';
-import { IconFolderOpen, IconGamepad, IconPause, IconPlay, IconRotateCcw, IconSave, IconStop } from './Icons';
+import {
+  IconFastForward,
+  IconFolderOpen,
+  IconGamepad,
+  IconPause,
+  IconPlay,
+  IconRewind,
+  IconRotateCcw,
+  IconSave,
+  IconStop,
+} from './Icons';
 
 export type Status = {
   message: string;
@@ -37,8 +47,38 @@ const PlayView = ({
 }: PlayViewProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const { canvas, emulator } = useContext(GBAContext);
+  const fastForwardPrevMultiplierRef = useRef<number | null>(null);
   const romNameForMode = (emulator?.gameName || activeRom || '').replace(/\.zip$/i, '');
   const isGbcRom = /\.(gbc|gb)$/i.test(romNameForMode);
+
+  const startFastForward = useCallback(() => {
+    if (!emulator) return;
+    if (fastForwardPrevMultiplierRef.current === null) {
+      fastForwardPrevMultiplierRef.current = emulator.getFastForwardMultiplier();
+    }
+    emulator.setFastForwardMultiplier(3);
+  }, [emulator]);
+
+  const stopFastForward = useCallback(() => {
+    if (!emulator) return;
+    const prev = fastForwardPrevMultiplierRef.current ?? 1;
+    emulator.setFastForwardMultiplier(Math.max(1, prev));
+    fastForwardPrevMultiplierRef.current = null;
+  }, [emulator]);
+
+  const startRewind = useCallback(() => {
+    if (!emulator) return;
+    emulator.toggleRewind(true);
+  }, [emulator]);
+
+  const stopRewind = useCallback(() => {
+    if (!emulator) return;
+    emulator.toggleRewind(false);
+  }, [emulator]);
+
+  useEffect(() => {
+    fastForwardPrevMultiplierRef.current = null;
+  }, [emulator]);
 
   useEffect(() => {
     if (!containerRef.current || !canvas) return;
@@ -170,6 +210,48 @@ const PlayView = ({
               >
                 R
               </button> 
+              <button
+                type="button"
+                className="shoulder icon fast-forward"
+                disabled={!emulator || !activeRom}
+                title="Hold to fast forward"
+                aria-label="Fast forward"
+                onPointerDown={(event) => {
+                  event.preventDefault();
+                  event.currentTarget.setPointerCapture?.(event.pointerId);
+                  startFastForward();
+                }}
+                onPointerUp={(event) => {
+                  stopFastForward();
+                  event.currentTarget.releasePointerCapture?.(event.pointerId);
+                }}
+                onPointerCancel={stopFastForward}
+                onPointerLeave={stopFastForward}
+                onLostPointerCapture={stopFastForward}
+              >
+                <IconFastForward />
+              </button>
+              <button
+                type="button"
+                className="shoulder icon rewind"
+                disabled={!emulator || !activeRom}
+                title="Hold to rewind"
+                aria-label="Rewind"
+                onPointerDown={(event) => {
+                  event.preventDefault();
+                  event.currentTarget.setPointerCapture?.(event.pointerId);
+                  startRewind();
+                }}
+                onPointerUp={(event) => {
+                  stopRewind();
+                  event.currentTarget.releasePointerCapture?.(event.pointerId);
+                }}
+                onPointerCancel={stopRewind}
+                onPointerLeave={stopRewind}
+                onLostPointerCapture={stopRewind}
+              >
+                <IconRewind />
+              </button>
               <DPad
                 onPress={(dir) => emulator?.buttonPress(dir)}
                 onUnpress={(dir) => emulator?.buttonUnpress(dir)}

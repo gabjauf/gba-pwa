@@ -145,6 +145,20 @@ export const IconGamepad = (props: SvgProps) => (
   </svg>
 );
 
+export const IconFastForward = (props: SvgProps) => (
+  <svg {...baseSvgProps} {...props}>
+    <path d="M4 6v12l8-6-8-6z" fill="currentColor" />
+    <path d="M12 6v12l8-6-8-6z" fill="currentColor" />
+  </svg>
+);
+
+export const IconRewind = (props: SvgProps) => (
+  <svg {...baseSvgProps} {...props}>
+    <path d="M20 6v12l-8-6 8-6z" fill="currentColor" />
+    <path d="M12 6v12L4 12l8-6z" fill="currentColor" />
+  </svg>
+);
+
 export type DPadArrowDirection = 'up' | 'down' | 'left' | 'right';
 
 export const IconDPadArrow = ({ direction, ...props }: SvgProps & { direction: DPadArrowDirection }) => {

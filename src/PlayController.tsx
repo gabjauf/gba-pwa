@@ -137,6 +137,9 @@ const PlayController = () => {
       videoSync: false,
       audioSync: false,
       threadedVideo: false,
+      rewindEnable: true,
+      rewindBufferCapacity: 600,
+      rewindBufferInterval: 2,
     });
     persistSettings();
   }, [performanceMode, persistSettings, emulator]);
