@@ -39,6 +39,21 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  --icon-size: 18px;
+  line-height: 0;
+}
+
+.icon-button svg,
+button.icon svg {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  display: block;
+  flex: 0 0 auto;
+}
+
+button.icon {
+  --icon-size: 18px;
+  line-height: 0;
 }
 
 .hero {
@@ -301,8 +316,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
   padding: 0.35rem;
+  --icon-size: 18px;
+  line-height: 0;
 }
 
 .play-panel.gameboy-view .controls-hint {
@@ -451,6 +467,7 @@
 
 .play-panel.gameboy-view .dpad {
   --dpad-arm: clamp(52px, min(18vw, 12vh), 82px);
+  --dpad-icon-size: calc(var(--dpad-arm) * 0.42);
   width: min(100%, calc(var(--dpad-arm) * 3));
   aspect-ratio: 1 / 1;
   height: auto;
@@ -471,9 +488,17 @@
   min-width: 0;
   min-height: 0;
   border-radius: 14px;
-  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   user-select: none;
   pointer-events: none;
+  line-height: 0;
+}
+
+.play-panel.gameboy-view .dpad button svg {
+  width: var(--dpad-icon-size);
+  height: var(--dpad-icon-size);
 }
 
 .play-panel.gameboy-view .dpad .up {

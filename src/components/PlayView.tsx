@@ -2,6 +2,7 @@ import { useContext, useEffect, useRef } from 'react';
 import { GBAContext } from '../emulator/useEmulator';
 import DPad from './DPad';
 import ActionPad from './ActionPad';
+import { IconFolderOpen, IconGamepad, IconPause, IconPlay, IconRotateCcw, IconSave, IconStop } from './Icons';
 
 export type Status = {
   message: string;
@@ -88,7 +89,7 @@ const PlayView = ({
               title={isPaused ? 'Resume' : 'Pause'}
               aria-label={isPaused ? 'Resume' : 'Pause'}
             >
-              {isPaused ? '▶' : '⏸'}
+              {isPaused ? <IconPlay /> : <IconPause />}
             </button>
             <button
               type="button"
@@ -98,7 +99,7 @@ const PlayView = ({
               title="Reset"
               aria-label="Reset"
             >
-              ↻
+              <IconRotateCcw />
             </button>
             <button
               type="button"
@@ -108,7 +109,7 @@ const PlayView = ({
               title="Quit"
               aria-label="Quit"
             >
-              ⏹
+              <IconStop />
             </button>
             <button
               type="button"
@@ -118,7 +119,7 @@ const PlayView = ({
               title="Quick save"
               aria-label="Quick save"
             >
-              💾
+              <IconSave />
             </button>
             <button
               type="button"
@@ -128,7 +129,7 @@ const PlayView = ({
               title="Quick load"
               aria-label="Quick load"
             >
-              📂
+              <IconFolderOpen />
             </button>
             <button
               type="button"
@@ -142,11 +143,11 @@ const PlayView = ({
           </div>
           <button
             type="button"
-            className="ghost controls-hint"
+            className="ghost controls-hint icon"
             title="Controls: D‑pad, A/B, L/R shoulders, Select/Start bottom. Keyboard: arrows, Z/X, A/S, Shift (Select), Enter/Space (Start)."
             aria-label="Controls help"
           >
-            🎮
+            <IconGamepad />
           </button>
         </div>
 

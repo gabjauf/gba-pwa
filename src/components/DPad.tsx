@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef } from 'react';
+import { IconDPadArrow } from './Icons';
 
 export type DPadDirection = 'up' | 'down' | 'left' | 'right';
 
@@ -129,17 +130,17 @@ const DPad = ({ onPress, onUnpress, disabled, className }: DPadProps) => {
       {...handlers}
     >
       <button type="button" className="up" aria-hidden="true" tabIndex={-1}>
-        ▲
+        <IconDPadArrow direction="up" />
       </button>
       <button type="button" className="left" aria-hidden="true" tabIndex={-1}>
-        ◀
+        <IconDPadArrow direction="left" />
       </button>
       <div className="center" aria-hidden="true" />
       <button type="button" className="right" aria-hidden="true" tabIndex={-1}>
-        ▶
+        <IconDPadArrow direction="right" />
       </button>
       <button type="button" className="down" aria-hidden="true" tabIndex={-1}>
-        ▼
+        <IconDPadArrow direction="down" />
       </button>
     </div>
   );
