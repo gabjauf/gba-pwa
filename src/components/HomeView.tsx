@@ -39,7 +39,7 @@ const HomeView = ({
             <label className="upload">
               <input
                 type="file"
-                accept=".gba,.gb,.gbc,.zip,.7z"
+                accept="*/*"
                 onChange={(e) => onImport(e.target.files)}
               />
               <span>Import ROM</span>
@@ -86,7 +86,7 @@ const HomeView = ({
           <label className="upload primary">
             <input
               type="file"
-              accept=".gba,.gb,.gbc,.zip,.7z"
+              accept="*/*"
               onChange={(e) => onImport(e.target.files)}
             />
             <span>Choose file</span>
