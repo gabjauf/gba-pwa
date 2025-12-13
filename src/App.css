@@ -18,6 +18,9 @@
   height: 100dvh;
   overflow: hidden;
   overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .topbar {
@@ -256,6 +259,9 @@ button.icon {
   justify-content: center;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
     env(safe-area-inset-left);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .gameboy-shell {
@@ -309,6 +315,8 @@ button.icon {
   font-size: 12px;
   border-radius: 10px;
   min-width: 36px;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .play-panel.gameboy-view .gameboy-toolbar button.icon {
@@ -361,6 +369,8 @@ button.icon {
   align-items: center;
   justify-content: center;
   background: #000;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .play-panel.gameboy-view .emulator-canvas {
@@ -373,6 +383,8 @@ button.icon {
   border-radius: 8px;
   background: #000;
   image-rendering: pixelated;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .play-panel.gameboy-view .emulator-canvas.full {
@@ -420,6 +432,31 @@ button.icon {
 @media (orientation: portrait) {
   .play-panel.gameboy-view .rom-badge {
     display: none;
+  }
+}
+
+@media (orientation: landscape) {
+  .play-panel.gameboy-view .gamepad {
+    grid-template-areas:
+      "dpad actions"
+      "l r"
+      "meta meta";
+  }
+
+  .play-panel.gameboy-view .dpad {
+    --dpad-arm: clamp(62px, min(20vw, 18vh), 96px);
+  }
+
+  .play-panel.gameboy-view .actions button {
+    width: clamp(90px, min(20vw, 22vh), 128px);
+    height: clamp(90px, min(20vw, 22vh), 128px);
+  }
+
+  .play-panel.gameboy-view .meta button {
+    width: clamp(92px, min(18vw, 14vh), 140px);
+    min-height: 38px;
+    font-size: 11px;
+    padding: 0.35rem 0.65rem;
   }
 }
 
@@ -561,6 +598,8 @@ button.icon {
 
 .play-panel.gameboy-view .gamepad button {
   touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .play-panel.gameboy-view .shoulder {
@@ -998,12 +1037,14 @@ input[type='range'] {
 
   .play-panel.gameboy-view .gamepad .shoulder.left {
     left: 10px;
-    top: 10px;
+    top: 50%;
+    transform: translateY(-50%);
   }
 
   .play-panel.gameboy-view .gamepad .shoulder.right {
     right: 10px;
-    top: 10px;
+    top: 50%;
+    transform: translateY(-50%);
   }
 
   .play-panel.gameboy-view .gamepad .meta {
@@ -1026,7 +1067,7 @@ input[type='range'] {
   }
 
   .play-panel.gameboy-view .dpad {
-    --dpad-arm: clamp(40px, 8vh, 52px);
+    --dpad-arm: clamp(50px, 11vh, 66px);
   }
 
   .play-panel.gameboy-view .dpad button {
@@ -1034,15 +1075,15 @@ input[type='range'] {
   }
 
   .play-panel.gameboy-view .actions button {
-    width: clamp(56px, 11vh, 74px);
-    height: clamp(56px, 11vh, 74px);
+    width: clamp(66px, 14vh, 92px);
+    height: clamp(66px, 14vh, 92px);
     min-height: 0;
     border-radius: 999px;
     padding: 0;
   }
 
   .play-panel.gameboy-view .actions button:last-child {
-    transform: translateY(-6px);
+    transform: translateY(-8px);
   }
 
   .play-panel.gameboy-view .shoulder.left,
@@ -1055,8 +1096,11 @@ input[type='range'] {
   }
 
   .play-panel.gameboy-view .meta button {
-    min-width: 96px;
-    min-height: clamp(34px, 7vh, 44px);
+    width: auto;
+    min-width: 72px;
+    min-height: clamp(30px, 6vh, 40px);
+    font-size: 11px;
+    padding: 0.25rem 0.6rem;
     background: rgba(19, 26, 51, 0.35);
   }
 }
