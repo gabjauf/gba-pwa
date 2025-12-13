@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useRef } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import { GBAContext } from '../emulator/useEmulator';
 import DPad from './DPad';
 import ActionPad from './ActionPad';
@@ -50,6 +50,96 @@ const PlayView = ({
   const fastForwardPrevMultiplierRef = useRef<number | null>(null);
   const romNameForMode = (emulator?.gameName || activeRom || '').replace(/\.zip$/i, '');
   const isGbcRom = /\.(gbc|gb)$/i.test(romNameForMode);
+  const canUseSpeedControls = Boolean(emulator && activeRom);
+
+  const useHoldPointer = (enabled: boolean, onStart: () => void, onStop: () => void) => {
+    const activePointerIdRef = useRef<number | null>(null);
+    const cleanupRef = useRef<(() => void) | null>(null);
+
+    const stop = useCallback(() => {
+      if (activePointerIdRef.current === null) return;
+      activePointerIdRef.current = null;
+      cleanupRef.current?.();
+      cleanupRef.current = null;
+      onStop();
+    }, [onStop]);
+
+    useEffect(() => {
+      if (enabled) return;
+      stop();
+    }, [enabled, stop]);
+
+    useEffect(() => () => stop(), [stop]);
+
+    const onPointerDown = useCallback(
+      (event: React.PointerEvent<HTMLButtonElement>) => {
+        if (!enabled) return;
+        if (activePointerIdRef.current !== null) return;
+
+        event.preventDefault();
+        activePointerIdRef.current = event.pointerId;
+        onStart();
+
+        try {
+          event.currentTarget.setPointerCapture?.(event.pointerId);
+        } catch {
+          // Ignore: not all browsers support pointer capture consistently
+        }
+
+        const handleUp = (e: PointerEvent) => {
+          if (e.pointerId !== activePointerIdRef.current) return;
+          stop();
+        };
+
+        const handleBlur = () => stop();
+
+        const handleVisibility = () => {
+          if (document.visibilityState !== 'visible') stop();
+        };
+
+        window.addEventListener('pointerup', handleUp);
+        window.addEventListener('pointercancel', handleUp);
+        window.addEventListener('blur', handleBlur);
+        document.addEventListener('visibilitychange', handleVisibility);
+
+        cleanupRef.current = () => {
+          window.removeEventListener('pointerup', handleUp);
+          window.removeEventListener('pointercancel', handleUp);
+          window.removeEventListener('blur', handleBlur);
+          document.removeEventListener('visibilitychange', handleVisibility);
+        };
+      },
+      [enabled, onStart, stop],
+    );
+
+    const onPointerUp = useCallback(
+      (event: React.PointerEvent<HTMLButtonElement>) => {
+        if (event.pointerId !== activePointerIdRef.current) return;
+        stop();
+        try {
+          event.currentTarget.releasePointerCapture?.(event.pointerId);
+        } catch {
+          // ignore
+        }
+      },
+      [stop],
+    );
+
+    const onPointerCancel = useCallback(
+      (event: React.PointerEvent<HTMLButtonElement>) => {
+        if (event.pointerId !== activePointerIdRef.current) return;
+        stop();
+      },
+      [stop],
+    );
+
+    const onLostPointerCapture = useCallback(() => stop(), [stop]);
+
+    return useMemo(
+      () => ({ onPointerDown, onPointerUp, onPointerCancel, onLostPointerCapture }),
+      [onPointerCancel, onPointerDown, onPointerUp, onLostPointerCapture],
+    );
+  };
 
   const startFastForward = useCallback(() => {
     if (!emulator) return;
@@ -79,6 +169,9 @@ const PlayView = ({
   useEffect(() => {
     fastForwardPrevMultiplierRef.current = null;
   }, [emulator]);
+
+  const fastForwardHold = useHoldPointer(canUseSpeedControls, startFastForward, stopFastForward);
+  const rewindHold = useHoldPointer(canUseSpeedControls, startRewind, stopRewind);
 
   useEffect(() => {
     if (!containerRef.current || !canvas) return;
@@ -213,42 +306,20 @@ const PlayView = ({
               <button
                 type="button"
                 className="shoulder icon fast-forward"
-                disabled={!emulator || !activeRom}
+                disabled={!canUseSpeedControls}
                 title="Hold to fast forward"
                 aria-label="Fast forward"
-                onPointerDown={(event) => {
-                  event.preventDefault();
-                  event.currentTarget.setPointerCapture?.(event.pointerId);
-                  startFastForward();
-                }}
-                onPointerUp={(event) => {
-                  stopFastForward();
-                  event.currentTarget.releasePointerCapture?.(event.pointerId);
-                }}
-                onPointerCancel={stopFastForward}
-                onPointerLeave={stopFastForward}
-                onLostPointerCapture={stopFastForward}
+                {...fastForwardHold}
               >
                 <IconFastForward />
               </button>
               <button
                 type="button"
                 className="shoulder icon rewind"
-                disabled={!emulator || !activeRom}
+                disabled={!canUseSpeedControls}
                 title="Hold to rewind"
                 aria-label="Rewind"
-                onPointerDown={(event) => {
-                  event.preventDefault();
-                  event.currentTarget.setPointerCapture?.(event.pointerId);
-                  startRewind();
-                }}
-                onPointerUp={(event) => {
-                  stopRewind();
-                  event.currentTarget.releasePointerCapture?.(event.pointerId);
-                }}
-                onPointerCancel={stopRewind}
-                onPointerLeave={stopRewind}
-                onLostPointerCapture={stopRewind}
+                {...rewindHold}
               >
                 <IconRewind />
               </button>
