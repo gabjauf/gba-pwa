@@ -138,7 +138,6 @@ const PlayController = () => {
       videoSync: false,
       audioSync: false,
       threadedVideo: false,
-      showFpsCounter: true,
     });
     persistSettings();
   }, [performanceMode, persistSettings, emulator]);
