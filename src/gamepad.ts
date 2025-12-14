@@ -3,7 +3,6 @@ export type EmulatorButton = 'up' | 'down' | 'left' | 'right' | 'a' | 'b' | 'l' 
 export type GamepadReadOptions = {
   deadzone?: number;
   threshold?: number;
-  invertCrossCircle?: boolean;
 };
 
 const DEFAULT_DEADZONE = 0.55;
@@ -20,7 +19,7 @@ export function pickPreferredGamepadFromList(pads: (Gamepad | null)[]) {
 
 export function readEmulatorButtonsFromGamepad(
   pad: Gamepad,
-  { deadzone = DEFAULT_DEADZONE, threshold = DEFAULT_THRESHOLD, invertCrossCircle = false }: GamepadReadOptions = {},
+  { deadzone = DEFAULT_DEADZONE, threshold = DEFAULT_THRESHOLD }: GamepadReadOptions = {},
 ): { buttons: Record<EmulatorButton, boolean>; fastForward: boolean; rewind: boolean } {
   const axesX = pad.axes[0] ?? 0;
   const axesY = pad.axes[1] ?? 0;
@@ -30,9 +29,6 @@ export function readEmulatorButtonsFromGamepad(
   const square = 2; // left
   const triangle = 3; // top
 
-  const aPrimary = invertCrossCircle ? cross : circle;
-  const bPrimary = invertCrossCircle ? circle : cross;
-
   return {
     buttons: {
       up: buttonActive(pad.buttons[12], threshold) || axesY < -deadzone,
@@ -40,8 +36,8 @@ export function readEmulatorButtonsFromGamepad(
       left: buttonActive(pad.buttons[14], threshold) || axesX < -deadzone,
       right: buttonActive(pad.buttons[15], threshold) || axesX > deadzone,
       // Keep top/left as alternates: triangle behaves like A, square like B.
-      a: buttonActive(pad.buttons[aPrimary], threshold) || buttonActive(pad.buttons[triangle], threshold),
-      b: buttonActive(pad.buttons[bPrimary], threshold) || buttonActive(pad.buttons[square], threshold),
+      a: buttonActive(pad.buttons[cross], threshold),
+      b: buttonActive(pad.buttons[circle], threshold),
       l: buttonActive(pad.buttons[4], threshold),
       r: buttonActive(pad.buttons[5], threshold),
       select: buttonActive(pad.buttons[8], threshold),

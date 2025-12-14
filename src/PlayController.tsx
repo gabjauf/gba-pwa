@@ -2,7 +2,7 @@ import { useCallback, useContext, useEffect, useRef, useState, type DragEvent } 
 import HomeView from './components/HomeView';
 import PlayView from './components/PlayView';
 import { GBAContext } from './emulator/useEmulator';
-import { type EmulatorButton, pickPreferredGamepadFromList, readEmulatorButtonsFromGamepad } from './gamepad';
+import { useGamepadControls } from './hooks/useGamepadControls';
 
 export type Status = {
   message: string;
@@ -35,22 +35,6 @@ const PlayController = () => {
   const { emulator } = useContext(GBAContext);
   console.log(emulator);
   const syncTimer = useRef<number | null>(null);
-  const gamepadLoopRef = useRef<number | null>(null);
-  const gamepadPrevRef = useRef<Record<EmulatorButton, boolean>>({
-    up: false,
-    down: false,
-    left: false,
-    right: false,
-    a: false,
-    b: false,
-    l: false,
-    r: false,
-    select: false,
-    start: false,
-  });
-  const gamepadPrevFastForwardRef = useRef(false);
-  const gamepadPrevRewindRef = useRef(false);
-  const gamepadPrevMultiplierRef = useRef<number | null>(null);
   const [booting] = useState(false);
   const [roms, setRoms] = useState<string[]>([]);
   const [activeRom, setActiveRom] = useState<string | null>(null);
@@ -190,100 +174,10 @@ const PlayController = () => {
     };
   }, [handleKeyboard]);
 
-  useEffect(() => {
-    if (!emulator || view !== 'play' || !activeRom) return;
-
-    const stopAll = () => {
-      for (const key of Object.keys(gamepadPrevRef.current) as EmulatorButton[]) {
-        if (gamepadPrevRef.current[key]) {
-          emulator.buttonUnpress(key);
-          gamepadPrevRef.current[key] = false;
-        }
-      }
-
-      if (gamepadPrevFastForwardRef.current) {
-        const prev = gamepadPrevMultiplierRef.current ?? emulator.getFastForwardMultiplier();
-        emulator.setFastForwardMultiplier(Math.max(1, prev));
-        gamepadPrevMultiplierRef.current = null;
-        gamepadPrevFastForwardRef.current = false;
-      }
-
-      if (gamepadPrevRewindRef.current) {
-        emulator.toggleRewind(false);
-        gamepadPrevRewindRef.current = false;
-      }
-    };
-
-    const tick = () => {
-      const pad = pickPreferredGamepadFromList(navigator.getGamepads?.() ?? []);
-      if (!pad) {
-        stopAll();
-        gamepadLoopRef.current = window.requestAnimationFrame(tick);
-        return;
-      }
-
-      const { buttons: next, fastForward: nextFastForward, rewind: nextRewind } =
-        readEmulatorButtonsFromGamepad(pad, { invertCrossCircle: true });
-
-      let resumedAudio = false;
-      for (const key of Object.keys(next) as EmulatorButton[]) {
-        const was = gamepadPrevRef.current[key];
-        const now = next[key];
-        if (now && !was) {
-          emulator.buttonPress(key);
-          if (!resumedAudio) {
-            emulator.resumeAudio();
-            resumedAudio = true;
-          }
-        } else if (!now && was) {
-          emulator.buttonUnpress(key);
-        }
-        gamepadPrevRef.current[key] = now;
-      }
-
-      if (nextFastForward && !gamepadPrevFastForwardRef.current) {
-        if (gamepadPrevMultiplierRef.current === null) {
-          gamepadPrevMultiplierRef.current = emulator.getFastForwardMultiplier();
-        }
-        emulator.setFastForwardMultiplier(3);
-        gamepadPrevFastForwardRef.current = true;
-      } else if (!nextFastForward && gamepadPrevFastForwardRef.current) {
-        const prev = gamepadPrevMultiplierRef.current ?? 1;
-        emulator.setFastForwardMultiplier(Math.max(1, prev));
-        gamepadPrevMultiplierRef.current = null;
-        gamepadPrevFastForwardRef.current = false;
-      }
-
-      if (nextRewind && !gamepadPrevRewindRef.current) {
-        emulator.toggleRewind(true);
-        gamepadPrevRewindRef.current = true;
-      } else if (!nextRewind && gamepadPrevRewindRef.current) {
-        emulator.toggleRewind(false);
-        gamepadPrevRewindRef.current = false;
-      }
-
-      gamepadLoopRef.current = window.requestAnimationFrame(tick);
-    };
-
-    const handleVisibility = () => {
-      if (document.visibilityState !== 'visible') stopAll();
-    };
-
-    window.addEventListener('gamepaddisconnected', stopAll);
-    document.addEventListener('visibilitychange', handleVisibility);
-
-    gamepadLoopRef.current = window.requestAnimationFrame(tick);
-
-    return () => {
-      if (gamepadLoopRef.current !== null) {
-        window.cancelAnimationFrame(gamepadLoopRef.current);
-        gamepadLoopRef.current = null;
-      }
-      window.removeEventListener('gamepaddisconnected', stopAll);
-      document.removeEventListener('visibilitychange', handleVisibility);
-      stopAll();
-    };
-  }, [activeRom, emulator, view]);
+  useGamepadControls({
+    emulator,
+    enabled: Boolean(emulator && view === 'play' && activeRom),
+  });
 
   const loadRomFromPath = useCallback(
     async (romName: string) => {
