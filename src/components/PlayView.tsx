@@ -24,12 +24,14 @@ export type PlayViewProps = {
   isPaused: boolean;
   status: Status;
   showGamepad: boolean;
+  loadSelection: string;
+  loadSlotOptions: { value: string; label: string; disabled: boolean }[];
+  autoSaveOption: { value: string; label: string; disabled: boolean };
+  onLoadSelectionChange: (value: string) => void;
   onPauseToggle: () => void;
   onReset: () => void;
   onQuit: () => void;
   onSaveState: () => void;
-  onLoadState: () => void;
-  onAutoSave: () => void;
   showCanvas: boolean;
 };
 
@@ -37,12 +39,14 @@ const PlayView = ({
   activeRom,
   isPaused,
   showGamepad,
+  loadSelection,
+  loadSlotOptions,
+  autoSaveOption,
+  onLoadSelectionChange,
   onPauseToggle,
   onReset,
   onQuit,
   onSaveState,
-  onLoadState,
-  onAutoSave,
   showCanvas,
 }: PlayViewProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -249,30 +253,37 @@ const PlayView = ({
               className="ghost icon"
               onClick={onSaveState}
               disabled={!emulator || !activeRom}
-              title="Quick save"
-              aria-label="Quick save"
+              title="Save state"
+              aria-label="Save state"
             >
               <IconSave />
             </button>
-            <button
-              type="button"
-              className="ghost icon"
-              onClick={onLoadState}
-              disabled={!emulator || !activeRom}
-              title="Quick load"
-              aria-label="Quick load"
-            >
-              <IconFolderOpen />
-            </button>
-            <button
-              type="button"
-              className="ghost"
-              onClick={onAutoSave}
-              disabled={!emulator || !activeRom}
-              title="Force auto-save"
-            >
-              Auto
-            </button>
+            <div className="load-select" aria-label="Load state">
+              <select
+                value={loadSelection}
+                onChange={(event) => onLoadSelectionChange(event.target.value)}
+                disabled={!emulator || !activeRom}
+                aria-label="Load state"
+                title="Load state"
+              >
+                <option value="">Select state…</option>
+                <optgroup label="Slots">
+                  {loadSlotOptions.map((option) => (
+                    <option key={option.value} value={option.value} disabled={option.disabled}>
+                      {option.label}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="Auto-save">
+                  <option value={autoSaveOption.value} disabled={autoSaveOption.disabled}>
+                    {autoSaveOption.label}
+                  </option>
+                </optgroup>
+              </select>
+              <span className="load-select-icon" aria-hidden="true">
+                <IconFolderOpen />
+              </span>
+            </div>
           </div>
           <button
             type="button"

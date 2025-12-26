@@ -10,12 +10,51 @@ export type Status = {
 };
 
 const STORAGE_KEY = 'gba-studio-settings';
+const STATE_SLOT_COUNT = 5;
+const SAVE_STATE_META_KEY = 'gba-studio-save-states';
+
+type SaveSlotInfo = {
+  slot: number;
+  savedAt: number | null;
+  exists: boolean;
+};
+
+type LoadOption = {
+  value: string;
+  label: string;
+  disabled: boolean;
+};
 
 const filterEntries = (names: string[]) =>
   names.filter((name) => name && name !== '.' && name !== '..');
 
 const formatTime = (date: Date) =>
   date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const readSaveStateMeta = (): Record<string, Record<string, number>> => {
+  const raw = localStorage.getItem(SAVE_STATE_META_KEY);
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw) as Record<string, Record<string, number>>;
+    return parsed ?? {};
+  } catch (err) {
+    console.warn('Unable to parse save state metadata', err);
+    return {};
+  }
+};
+
+const writeSaveStateMeta = (meta: Record<string, Record<string, number>>) => {
+  localStorage.setItem(SAVE_STATE_META_KEY, JSON.stringify(meta));
+};
+
+const createEmptySlots = () =>
+  Array.from({ length: STATE_SLOT_COUNT }, (_, slot) => ({
+    slot,
+    savedAt: null,
+    exists: false,
+  }));
 
 const keyBindings: Record<string, string> = {
   ArrowUp: 'up',
@@ -51,6 +90,12 @@ const PlayController = () => {
   const [isPaused, setIsPaused] = useState(true);
   const [lastAutoSave, setLastAutoSave] = useState<string | null>(null);
   const [view, setView] = useState<'home' | 'play'>('home');
+  const [saveSlots, setSaveSlots] = useState<SaveSlotInfo[]>(() => createEmptySlots());
+  const saveSlotsRef = useRef<SaveSlotInfo[]>(saveSlots);
+  const [autoSaveInfo, setAutoSaveInfo] = useState<{ exists: boolean; savedAt: number | null }>(
+    { exists: false, savedAt: null }
+  );
+  const [loadSelection, setLoadSelection] = useState('');
 
   useEffect(() => {
     const handleUpdateAvailable = () => {
@@ -104,11 +149,122 @@ const PlayController = () => {
     [activeRom, performanceMode, showGamepad, volume]
   );
 
+  const getSaveSlotsFromFs = useCallback(() => {
+    if (!emulator || !activeRom) return {};
+    const saveStatePath = emulator.filePaths().saveStatePath;
+    let entries: string[] = [];
+    try {
+      entries = emulator.FS.readdir(saveStatePath);
+    } catch (err) {
+      console.warn('Unable to read save states from FS', err);
+      return {};
+    }
+
+    const romName = activeRom;
+    const baseName = romName.replace(/\.[^/.]+$/, '');
+    const patterns = [
+      new RegExp(`^${escapeRegExp(baseName)}\\.ss(\\d+)$`),
+      new RegExp(`^${escapeRegExp(romName)}\\.ss(\\d+)$`),
+    ];
+
+    const slotTimes: Record<number, number> = {};
+    for (const entry of filterEntries(entries)) {
+      for (const pattern of patterns) {
+        const match = entry.match(pattern);
+        if (!match) continue;
+        const slot = Number(match[1]);
+        if (!Number.isInteger(slot) || slot < 0 || slot >= STATE_SLOT_COUNT) {
+          continue;
+        }
+        try {
+          const stat = emulator.FS.stat(`${saveStatePath}/${entry}`);
+          const rawTime = stat?.mtime;
+          const mtime =
+            rawTime instanceof Date
+              ? rawTime.getTime()
+              : typeof rawTime === 'number'
+                ? rawTime
+                : Date.now();
+          slotTimes[slot] = mtime;
+        } catch {
+          slotTimes[slot] = Date.now();
+        }
+      }
+    }
+
+    return slotTimes;
+  }, [activeRom, emulator]);
+
+  const getAutoSaveInfo = useCallback(() => {
+    if (!emulator?.autoSaveStateName) return { exists: false, savedAt: null };
+    try {
+      const exists = emulator.FS.analyzePath(emulator.autoSaveStateName).exists;
+      if (!exists) return { exists: false, savedAt: null };
+      const stat = emulator.FS.stat(emulator.autoSaveStateName);
+      const rawTime = stat?.mtime;
+      const savedAt =
+        rawTime instanceof Date
+          ? rawTime.getTime()
+          : typeof rawTime === 'number'
+            ? rawTime
+            : Date.now();
+      return { exists: true, savedAt };
+    } catch {
+      return { exists: false, savedAt: null };
+    }
+  }, [emulator]);
+
+  const refreshSaveSlots = useCallback(() => {
+    if (!emulator || !activeRom) {
+      const emptySlots = createEmptySlots();
+      setSaveSlots(emptySlots);
+      saveSlotsRef.current = emptySlots;
+      setAutoSaveInfo({ exists: false, savedAt: null });
+      return;
+    }
+
+    const meta = readSaveStateMeta();
+    const metaSlots = meta[activeRom] ?? {};
+    const fsSlots = getSaveSlotsFromFs();
+    const slots = Array.from({ length: STATE_SLOT_COUNT }, (_, slot) => {
+      const metaTime = metaSlots[slot];
+      const fsTime = fsSlots[slot];
+      const savedAt = metaTime ?? fsTime ?? null;
+      return {
+        slot,
+        savedAt,
+        exists: savedAt !== null,
+      };
+    });
+
+    const nextAutoSaveInfo = getAutoSaveInfo();
+    setSaveSlots(slots);
+    saveSlotsRef.current = slots;
+    setAutoSaveInfo(nextAutoSaveInfo);
+    setLastAutoSave(
+      nextAutoSaveInfo.exists && nextAutoSaveInfo.savedAt
+        ? formatTime(new Date(nextAutoSaveInfo.savedAt))
+        : null
+    );
+  }, [activeRom, emulator, getAutoSaveInfo, getSaveSlotsFromFs]);
+
   const refreshRoms = useCallback(() => {
     if (!emulator) return;
     const list = filterEntries(emulator.listRoms()).sort((a, b) => a.localeCompare(b));
     setRoms(list);
   }, []);
+
+  useEffect(() => {
+    refreshSaveSlots();
+  }, [refreshSaveSlots]);
+
+  useEffect(() => {
+    saveSlotsRef.current = saveSlots;
+  }, [saveSlots]);
+
+  useEffect(() => {
+    setLoadSelection('');
+  }, [activeRom]);
 
   const scheduleSync = useCallback(() => {
     if (!emulator || syncTimer.current) return;
@@ -291,40 +447,112 @@ const PlayController = () => {
     setIsPaused((prev) => !prev);
   }, [isPaused]);
 
+  const pickSaveSlot = useCallback(() => {
+    const slots = saveSlotsRef.current.length ? saveSlotsRef.current : createEmptySlots();
+    const emptySlot = slots.find((slot) => !slot.exists);
+    if (emptySlot) return emptySlot.slot;
+
+    let oldestSlot = slots[0]?.slot ?? 0;
+    let oldestTime = slots[0]?.savedAt ?? Date.now();
+    for (const slot of slots) {
+      const time = slot.savedAt ?? 0;
+      if (time < oldestTime) {
+        oldestTime = time;
+        oldestSlot = slot.slot;
+      }
+    }
+    return oldestSlot;
+  }, []);
+
   const saveState = useCallback(() => {
-    if (!emulator) return;
-    const ok = emulator.saveState(0);
+    if (!emulator || !activeRom) return;
+    const slot = pickSaveSlot();
+    const ok = emulator.saveState(slot);
     if (ok) {
       scheduleSync();
-      setStatus({ message: 'Quick-saved (slot 0)', tone: 'success' });
+      const timestamp = Date.now();
+      const meta = readSaveStateMeta();
+      const romMeta = meta[activeRom] ?? {};
+      romMeta[slot] = timestamp;
+      meta[activeRom] = romMeta;
+      writeSaveStateMeta(meta);
+      refreshSaveSlots();
+      setStatus({
+        message: `Saved state (slot ${slot + 1})`,
+        tone: 'success',
+      });
     } else {
       setStatus({ message: 'Save failed', tone: 'warn' });
     }
-  }, [scheduleSync]);
+  }, [activeRom, pickSaveSlot, refreshSaveSlots, scheduleSync]);
 
-  const loadState = useCallback(() => {
-    if (!emulator) return;
-    const ok = emulator.loadState(0);
-    if (ok) {
-      emulator.resumeGame();
-      setStatus({ message: 'Quick-loaded (slot 0)', tone: 'success' });
-    } else {
-      setStatus({ message: 'No save in slot 0', tone: 'warn' });
-    }
-  }, []);
+  const handleLoadSelection = useCallback(
+    (value: string) => {
+      if (!emulator || !activeRom || !value) return;
+      let ok = false;
+      if (value === 'auto') {
+        ok = emulator.loadAutoSaveState();
+        if (ok) {
+          emulator.resumeGame();
+          emulator.resumeAudio();
+          setIsPaused(false);
+          setStatus({ message: 'Loaded auto-save', tone: 'success' });
+        } else {
+          setStatus({ message: 'No auto-save available', tone: 'warn' });
+        }
+      } else if (value.startsWith('slot:')) {
+        const slot = Number(value.replace('slot:', ''));
+        if (Number.isInteger(slot)) {
+          ok = emulator.loadState(slot);
+          if (ok) {
+            emulator.resumeGame();
+            emulator.resumeAudio();
+            setIsPaused(false);
+            setStatus({
+              message: `Loaded state (slot ${slot + 1})`,
+              tone: 'success',
+            });
+          } else {
+            setStatus({
+              message: `No save in slot ${slot + 1}`,
+              tone: 'warn',
+            });
+          }
+        } else {
+          setStatus({ message: 'Invalid save slot selected', tone: 'warn' });
+        }
+      }
+      setLoadSelection('');
+    },
+    [activeRom, emulator]
+  );
 
-  const autoSave = useCallback(() => {
-    if (!emulator) return;
-    const ok = emulator.forceAutoSaveState();
-    if (ok) {
-      scheduleSync();
-      const stamp = formatTime(new Date());
-      setLastAutoSave(stamp);
-      setStatus({ message: 'Auto-save forced', tone: 'success' });
-    } else {
-      setStatus({ message: 'Auto-save failed', tone: 'warn' });
-    }
-  }, [scheduleSync]);
+  const slotOptions: LoadOption[] = saveSlots.map((slot) => {
+    const label = slot.exists
+      ? `Slot ${slot.slot + 1} — ${slot.savedAt ? formatTime(new Date(slot.savedAt)) : 'Saved'}`
+      : `Slot ${slot.slot + 1} — empty`;
+    return {
+      value: `slot:${slot.slot}`,
+      label,
+      disabled: !slot.exists,
+    };
+  });
+
+  const autoSaveOption: LoadOption = {
+    value: 'auto',
+    label: autoSaveInfo.exists
+      ? `Auto-save — ${autoSaveInfo.savedAt ? formatTime(new Date(autoSaveInfo.savedAt)) : 'Saved'}`
+      : 'Auto-save — empty',
+    disabled: !autoSaveInfo.exists,
+  };
+
+  const onLoadSelectionChange = useCallback(
+    (value: string) => {
+      setLoadSelection(value);
+      handleLoadSelection(value);
+    },
+    [handleLoadSelection]
+  );
 
   const reset = () => {
     if (!emulator) return;
@@ -384,12 +612,14 @@ const PlayController = () => {
         isPaused={isPaused}
         status={status}
         showGamepad={showGamepad}
+        loadSelection={loadSelection}
+        loadSlotOptions={slotOptions}
+        autoSaveOption={autoSaveOption}
+        onLoadSelectionChange={onLoadSelectionChange}
         onPauseToggle={pauseToggle}
         onReset={reset}
         onQuit={quit}
         onSaveState={saveState}
-        onLoadState={loadState}
-        onAutoSave={autoSave}
         showCanvas={view === 'play' && !!activeRom}
       />
     </div>

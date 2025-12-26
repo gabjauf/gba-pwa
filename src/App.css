@@ -352,6 +352,50 @@ button.icon {
   flex-wrap: wrap;
 }
 
+.load-select {
+  position: relative;
+  width: 36px;
+  height: 36px;
+}
+
+.load-select select {
+  appearance: none;
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  color: transparent;
+  text-indent: -9999px;
+  cursor: pointer;
+}
+
+.load-select select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.load-select-icon {
+  position: absolute;
+  inset: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  color: #f0f4ff;
+  font-size: 18px;
+}
+
+.load-select select:hover:not(:disabled),
+.load-select select:focus-visible:not(:disabled) {
+  border-color: var(--accent);
+  box-shadow: 0 10px 24px rgba(233, 92, 132, 0.2);
+}
+
+.load-select select:disabled + .load-select-icon {
+  opacity: 0.55;
+}
+
 .play-panel.gameboy-view .gameboy-toolbar button {
   padding: 0.35rem 0.55rem;
   font-size: 12px;
