@@ -42,6 +42,7 @@ const PlayController = () => {
     message: 'Booting the mGBA core…',
     tone: 'info',
   });
+  const [updateReady, setUpdateReady] = useState(false);
   const [showGamepad, setShowGamepad] = useState(true);
   const [volume, setVolume] = useState(80);
   const [performanceMode, setPerformanceMode] = useState<'quality' | 'performance'>(
@@ -50,6 +51,24 @@ const PlayController = () => {
   const [isPaused, setIsPaused] = useState(true);
   const [lastAutoSave, setLastAutoSave] = useState<string | null>(null);
   const [view, setView] = useState<'home' | 'play'>('home');
+
+  useEffect(() => {
+    const handleUpdateAvailable = () => {
+      setUpdateReady(true);
+    };
+    window.addEventListener('pwa-update-available', handleUpdateAvailable);
+    return () => {
+      window.removeEventListener('pwa-update-available', handleUpdateAvailable);
+    };
+  }, []);
+
+  const applyUpdate = useCallback(() => {
+    window.location.reload();
+  }, []);
+
+  const dismissUpdate = useCallback(() => {
+    setUpdateReady(false);
+  }, []);
 
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -325,6 +344,17 @@ const PlayController = () => {
 
   return (
     <div className={`page ${view === 'play' ? 'play-mode' : ''}`}>
+      {updateReady && view !== 'play' && (
+        <div className="update-toast" role="status" aria-live="polite">
+          <span>Update ready.</span>
+          <div className="update-actions">
+            <button onClick={applyUpdate}>Reload</button>
+            <button className="ghost" onClick={dismissUpdate}>
+              Later
+            </button>
+          </div>
+        </div>
+      )}
       {view !== 'play' &&
         <div className="topbar">
           <div className="brand">

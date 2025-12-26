@@ -1,6 +1,10 @@
 /* eslint-disable -- vendored external */
 // @ts-nocheck
 
+import { addPlugins, cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
+import { setDefaultHandler } from 'workbox-routing';
+import { NetworkOnly } from 'workbox-strategies';
+
 /**
  * Used for non-production deploys only.
  *
@@ -11,7 +15,9 @@
  */
 
 export type {};
-declare let self: ServiceWorkerGlobalScope;
+declare let self: ServiceWorkerGlobalScope & {
+  __WB_MANIFEST: Array<{ url: string; revision?: string }>;
+};
 
 declare global {
   interface Window {
@@ -21,6 +27,7 @@ declare global {
       coepCredentialless?: () => boolean;
       coepDegrade?: () => boolean;
       doReload?: () => void;
+      onUpdate?: () => void;
       quiet?: boolean;
     };
   }
@@ -28,6 +35,45 @@ declare global {
 
 /*! coi-serviceworker v0.1.7 - Guido Zuidhof and contributors, licensed under MIT */
 let coepCredentialless = false;
+
+const withCoiHeaders = (response: Response) => {
+  if (response.status === 0) {
+    return response;
+  }
+
+  const newHeaders = new Headers(response.headers);
+  newHeaders.set(
+    'Cross-Origin-Embedder-Policy',
+    coepCredentialless ? 'credentialless' : 'require-corp'
+  );
+  if (!coepCredentialless) {
+    newHeaders.set('Cross-Origin-Resource-Policy', 'cross-origin');
+  }
+  newHeaders.set('Cross-Origin-Opener-Policy', 'same-origin');
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: newHeaders,
+  });
+};
+
+const coiHeadersPlugin = {
+  requestWillFetch: async ({ request }: { request: Request }) => {
+    if (coepCredentialless && request.mode === 'no-cors') {
+      return new Request(request, { credentials: 'omit' });
+    }
+    return request;
+  },
+  fetchDidSucceed: async ({ response }: { response: Response }) =>
+    withCoiHeaders(response),
+  cachedResponseWillBeUsed: async ({
+    cachedResponse,
+  }: {
+    cachedResponse?: Response;
+  }) => (cachedResponse ? withCoiHeaders(cachedResponse) : cachedResponse),
+};
+
 if (typeof window === 'undefined') {
   self.addEventListener('install', () => self.skipWaiting());
   self.addEventListener('activate', (event) =>
@@ -53,47 +99,15 @@ if (typeof window === 'undefined') {
     }
   });
 
-  self.addEventListener('fetch', function (event) {
-    const r = event.request;
-    if (r.cache === 'only-if-cached' && r.mode !== 'same-origin') {
-      return;
-    }
+  addPlugins([coiHeadersPlugin]);
+  precacheAndRoute(self.__WB_MANIFEST);
+  cleanupOutdatedCaches();
 
-    const request =
-      coepCredentialless && r.mode === 'no-cors'
-        ? new Request(r, {
-            credentials: 'omit'
-          })
-        : r;
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response.status === 0) {
-            return response;
-          }
-
-          const newHeaders = new Headers(response.headers);
-          newHeaders.set(
-            'Cross-Origin-Embedder-Policy',
-            coepCredentialless ? 'credentialless' : 'require-corp'
-          );
-          if (!coepCredentialless) {
-            newHeaders.set('Cross-Origin-Resource-Policy', 'cross-origin');
-          }
-          newHeaders.set('Cross-Origin-Opener-Policy', 'same-origin');
-
-          return new Response(response.body, {
-            status: response.status,
-            statusText: response.statusText,
-            headers: newHeaders
-          });
-        })
-        .catch((e) => {
-          console.error(e);
-          return new Response(null, { status: 500 });
-        })
-    );
-  });
+  setDefaultHandler(
+    new NetworkOnly({
+      plugins: [coiHeadersPlugin],
+    })
+  );
 } else {
   (() => {
     const reloadedBySelf = window.sessionStorage.getItem('coiReloadedBySelf');
@@ -109,6 +123,12 @@ if (typeof window === 'undefined') {
       doReload: () => window.location.reload(),
       quiet: false,
       ...window.coi
+    };
+    const notifyUpdate = () => {
+      window.dispatchEvent(new CustomEvent('pwa-update-available'));
+      if (coi.onUpdate) {
+        coi.onUpdate();
+      }
     };
 
     const n = navigator;
@@ -142,9 +162,7 @@ if (typeof window === 'undefined') {
       }
     }
 
-    // If we're already coi: do nothing. Perhaps it's due to this script doing its job, or COOP/COEP are
-    // already set from the origin server. Also if the browser has no notion of crossOriginIsolated, just give up here.
-    if (window.crossOriginIsolated !== false || !coi.shouldRegister()) return;
+    if (!coi.shouldRegister()) return;
 
     if (!window.isSecureContext) {
       if (!coi.quiet)
@@ -174,12 +192,14 @@ if (typeof window === 'undefined') {
             );
 
           registration.addEventListener('updatefound', () => {
-            if (!coi.quiet)
-              console.log(
-                'Reloading page to make use of updated COOP/COEP Service Worker.'
-              );
-            window.sessionStorage.setItem('coiReloadedBySelf', 'updatefound');
-            coi.doReload();
+            const installing = registration.installing;
+            if (!installing) return;
+            installing.addEventListener('statechange', () => {
+              if (installing.state === 'installed' && registration.active) {
+                if (!coi.quiet) console.log('Update available for the PWA.');
+                notifyUpdate();
+              }
+            });
           });
 
           // If the registration is active, but it's not controlling the page

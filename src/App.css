@@ -23,6 +23,48 @@
   -webkit-touch-callout: none;
 }
 
+.update-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(12, 16, 33, 0.92);
+  border: 1px solid #273058;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  max-width: calc(100% - 24px);
+  flex-wrap: wrap;
+}
+
+.update-toast span {
+  font-weight: 600;
+}
+
+.update-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.update-toast button {
+  padding: 0.4rem 0.7rem;
+  font-size: 13px;
+  border-radius: 999px;
+}
+
+.update-toast button.ghost {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--muted);
+  box-shadow: none;
+}
+
 .topbar {
   display: flex;
   justify-content: space-between;

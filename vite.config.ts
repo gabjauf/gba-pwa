@@ -33,6 +33,8 @@ const loadHttpsConfig = () => {
 export default defineConfig(() => {
   const explicitHttps = process.env.VITE_HTTPS === '1' || process.env.HTTPS === 'true';
   const httpsConfig = explicitHttps ? loadHttpsConfig() : undefined;
+  const isProd = process.env.NODE_ENV === 'production';
+  const base = isProd ? '/gba-pwa/' : '/';
 
   if (explicitHttps && !httpsConfig && explicitHttps) {
     const certFile = resolveFromRoot(process.env.VITE_SSL_CERT ?? 'certs/dev.pem');
@@ -48,7 +50,7 @@ export default defineConfig(() => {
   }
 
   return ({
-  base: process.env.NODE_ENV === 'production' ? '/gba-pwa/' : '/',
+  base,
   plugins: [
     qrcode(),
     react(),
@@ -80,37 +82,34 @@ export default defineConfig(() => {
         background_color: '#050712',
         display: 'standalone',
         orientation: 'landscape',
-        start_url: '/gba-pwa/',
+        start_url: base,
+        scope: base,
         icons: [
           {
-            src: '/icons/icon-192.png',
+            src: 'icons/icon-192.png',
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: '/icons/icon-512.png',
+            src: 'icons/icon-512.png',
             sizes: '512x512',
             type: 'image/png',
           },
           {
-            src: '/icons/icon-maskable.png',
+            src: 'icons/icon-maskable.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',
           },
         ],
       },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,wasm}'],
-        navigateFallbackDenylist: [/^\/admin/]
-      },
       injectRegister: null,
       strategies: 'injectManifest',
       srcDir: 'src/service-worker',
       filename: 'coi-sw.ts',
       injectManifest: {
-        injectionPoint: undefined
-        // globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}'],
+        globPatterns: ['**/*.{js,css,html,wasm,ico,png,svg,webmanifest}'],
+        globIgnores: ['**/coi-sw.js'],
       },
     }),
   ],

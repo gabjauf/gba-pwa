@@ -26,8 +26,8 @@ export function readEmulatorButtonsFromGamepad(
 
   const cross = 0; // bottom
   const circle = 1; // right
-  const square = 2; // left
-  const triangle = 3; // top
+  // const square = 2; // left
+  // const triangle = 3; // top
 
   return {
     buttons: {
