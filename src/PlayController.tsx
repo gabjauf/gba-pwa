@@ -29,7 +29,11 @@ const filterEntries = (names: string[]) =>
   names.filter((name) => name && name !== '.' && name !== '..');
 
 const formatTime = (date: Date) =>
-  date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  `${date.toLocaleDateString([], {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -529,7 +533,9 @@ const PlayController = () => {
 
   const slotOptions: LoadOption[] = saveSlots.map((slot) => {
     const label = slot.exists
-      ? `Slot ${slot.slot + 1} — ${slot.savedAt ? formatTime(new Date(slot.savedAt)) : 'Saved'}`
+      ? `Slot ${slot.slot + 1} — ${
+          slot.savedAt ? formatTime(new Date(slot.savedAt)) : 'Saved'
+        }`
       : `Slot ${slot.slot + 1} — empty`;
     return {
       value: `slot:${slot.slot}`,
