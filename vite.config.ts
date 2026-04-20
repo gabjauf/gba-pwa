@@ -59,11 +59,11 @@ export default defineConfig(() => {
         tags: [
           {
             tag: 'script',
-            attrs: { src: 'coi-sw.js' },
-            injectTo: 'head-prepend'
-          }
-        ]
-      }
+            attrs: { src: 'coi-register.js' },
+            injectTo: 'head-prepend',
+          },
+        ],
+      },
     }),
     VitePWA({
       registerType: 'autoUpdate',
