@@ -1105,11 +1105,13 @@ input[type='range'] {
     display: block;
     padding: 0;
     pointer-events: none;
-    /* Floors clear the iOS home-indicator (bottom) and Safari edge-swipe
-       (left/right) gesture zones even when env() insets resolve to 0. */
-    --touch-inset-left: calc(env(safe-area-inset-left) + 30px);
-    --touch-inset-right: calc(env(safe-area-inset-right) + 30px);
-    --touch-inset-bottom: calc(env(safe-area-inset-bottom) + 30px);
+    /* The play panel is already padded by the safe-area insets, so these are
+       flat offsets from that safe boundary — re-adding env() here double-counts
+       it and drags both clusters toward the centre. Keep them small so the
+       D-pad and A/B hug the bottom corners. */
+    --touch-inset-left: 16px;
+    --touch-inset-right: 16px;
+    --touch-inset-bottom: 14px;
     --touch-dpad-arm: clamp(58px, 15vh, 76px);
     --touch-control-opacity: 0.68;
     --touch-actions-opacity: 0.78;
