@@ -2,7 +2,6 @@ import { useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import { GBAContext } from '../emulator/useEmulator';
 import DPad from './DPad';
 import ActionPad from './ActionPad';
-import PointerDebug from './PointerDebug';
 import {
   IconFastForward,
   IconFolderOpen,
@@ -204,7 +203,6 @@ const PlayView = ({
       style={{ display: showCanvas ? 'block' : 'none' }}
       aria-hidden={!showCanvas}
     >
-      {import.meta.env.DEV && showCanvas && <PointerDebug />}
       {/* <div className="panel-head">
         <div className="muted small">
           Keyboard: arrows, Z/X, A/S, Shift (Select), Enter/Space (Start)
