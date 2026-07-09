@@ -4,6 +4,11 @@ import PlayView from './components/PlayView';
 import { GBAContext } from './emulator/useEmulator';
 import { useGamepadControls } from './hooks/useGamepadControls';
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+  readonly userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
 export type Status = {
   message: string;
   tone?: 'info' | 'success' | 'warn';
@@ -86,6 +91,7 @@ const PlayController = () => {
     tone: 'info',
   });
   const [updateReady, setUpdateReady] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showGamepad, setShowGamepad] = useState(true);
   const [volume, setVolume] = useState(80);
   const [performanceMode, setPerformanceMode] = useState<'quality' | 'performance'>(
@@ -111,12 +117,34 @@ const PlayController = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e as BeforeInstallPromptEvent);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    window.addEventListener('appinstalled', () => setInstallPrompt(null));
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+    };
+  }, []);
+
   const applyUpdate = useCallback(() => {
     window.location.reload();
   }, []);
 
   const dismissUpdate = useCallback(() => {
     setUpdateReady(false);
+  }, []);
+
+  const triggerInstall = useCallback(async () => {
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    setInstallPrompt(null);
+  }, [installPrompt]);
+
+  const dismissInstall = useCallback(() => {
+    setInstallPrompt(null);
   }, []);
 
   useEffect(() => {
@@ -585,6 +613,17 @@ const PlayController = () => {
             <button onClick={applyUpdate}>Reload</button>
             <button className="ghost" onClick={dismissUpdate}>
               Later
+            </button>
+          </div>
+        </div>
+      )}
+      {installPrompt && view !== 'play' && (
+        <div className="update-toast" role="status" aria-live="polite">
+          <span>Install app for offline use.</span>
+          <div className="update-actions">
+            <button onClick={triggerInstall}>Install</button>
+            <button className="ghost" onClick={dismissInstall}>
+              Dismiss
             </button>
           </div>
         </div>

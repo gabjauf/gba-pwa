@@ -2,6 +2,7 @@ import { useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import { GBAContext } from '../emulator/useEmulator';
 import DPad from './DPad';
 import ActionPad from './ActionPad';
+import PointerDebug from './PointerDebug';
 import {
   IconFastForward,
   IconFolderOpen,
@@ -203,6 +204,7 @@ const PlayView = ({
       style={{ display: showCanvas ? 'block' : 'none' }}
       aria-hidden={!showCanvas}
     >
+      {import.meta.env.DEV && showCanvas && <PointerDebug />}
       {/* <div className="panel-head">
         <div className="muted small">
           Keyboard: arrows, Z/X, A/S, Shift (Select), Enter/Space (Start)
@@ -303,6 +305,7 @@ const PlayView = ({
                 className="shoulder left"
                 onPointerDown={() => emulator?.buttonPress('l')}
                 onPointerUp={() => emulator?.buttonUnpress('l')}
+                onPointerCancel={() => emulator?.buttonUnpress('l')}
               >
                 L
               </button>
@@ -311,9 +314,10 @@ const PlayView = ({
                 className="shoulder right"
                 onPointerDown={() => emulator?.buttonPress('r')}
                 onPointerUp={() => emulator?.buttonUnpress('r')}
+                onPointerCancel={() => emulator?.buttonUnpress('r')}
               >
                 R
-              </button> 
+              </button>
               <button
                 type="button"
                 className="shoulder icon fast-forward"
@@ -349,6 +353,7 @@ const PlayView = ({
                   type="button"
                   onPointerDown={() => emulator?.buttonPress('select')}
                   onPointerUp={() => emulator?.buttonUnpress('select')}
+                  onPointerCancel={() => emulator?.buttonUnpress('select')}
                 >
                   Select
                 </button>
@@ -356,6 +361,7 @@ const PlayView = ({
                   type="button"
                   onPointerDown={() => emulator?.buttonPress('start')}
                   onPointerUp={() => emulator?.buttonUnpress('start')}
+                  onPointerCancel={() => emulator?.buttonUnpress('start')}
                 >
                   Start
                 </button>

@@ -21,13 +21,13 @@ const OCTANT_DIRS: DPadDirection[][] = [
   ['up', 'right'],
 ];
 
-function dirsFromPoint(clientX: number, clientY: number, rect: DOMRect): DPadDirection[] {
+export function dirsFromPoint(clientX: number, clientY: number, rect: DOMRect): DPadDirection[] {
   const centerX = rect.left + rect.width / 2;
   const centerY = rect.top + rect.height / 2;
   const dx = clientX - centerX;
   const dy = clientY - centerY;
   const dist = Math.hypot(dx, dy);
-  const deadzone = Math.min(rect.width, rect.height) * 0.18;
+  const deadzone = Math.min(rect.width, rect.height) * 0.12;
   if (dist < deadzone) return [];
 
   const angle = Math.atan2(dy, dx);

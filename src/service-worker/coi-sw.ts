@@ -71,7 +71,12 @@ const coiHeadersPlugin = {
     cachedResponse,
   }: {
     cachedResponse?: Response;
-  }) => (cachedResponse ? withCoiHeaders(cachedResponse) : cachedResponse),
+    request?: Request;
+  }) =>
+    // The document must keep its COOP/COEP headers too — without them the
+    // offline/cached page is no longer cross-origin isolated, so
+    // SharedArrayBuffer disappears and the mGBA core can't boot.
+    cachedResponse ? withCoiHeaders(cachedResponse) : cachedResponse,
 };
 
 if (typeof window === 'undefined') {

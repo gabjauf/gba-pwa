@@ -9,7 +9,7 @@ export type ActionPadProps = {
   className?: string;
 };
 
-function buttonsFromPoint(
+export function buttonsFromPoint(
   clientX: number,
   clientY: number,
   rectA: DOMRect,

@@ -1,11 +1,50 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { createHtmlPlugin } from 'vite-plugin-html';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { qrcode } from 'vite-plugin-qrcode';
+
+// The Mac's stable Bonjour name (my-mac.local), which iOS resolves on the same
+// Wi-Fi regardless of the DHCP-assigned IP. This is the only URL our dev TLS
+// cert is valid for on-device, so it's the only one worth a QR code.
+const bonjourHost = () => {
+  try {
+    const name = execSync('scutil --get LocalHostName', {
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+      .toString()
+      .trim();
+    if (name) return `${name}.local`;
+  } catch {
+    // Not macOS / scutil unavailable — fall back to the OS hostname.
+  }
+  const host = os.hostname();
+  return host.endsWith('.local') ? host : `${host.replace(/\..*$/, '')}.local`;
+};
+
+// Adds the .local hostname URL to the server's advertised network URLs so the
+// QR plugin (filtered to .local below) can render a code that points at it.
+const hostnameNetworkUrl = (): Plugin => ({
+  name: 'hostname-network-url',
+  apply: 'serve',
+  configureServer(server) {
+    server.httpServer?.once('listening', () => {
+      setTimeout(() => {
+        const network = server.resolvedUrls?.network;
+        const address = server.httpServer?.address();
+        if (!network || typeof address !== 'object' || !address) return;
+        const protocol = server.config.server.https ? 'https' : 'http';
+        const url = `${protocol}://${bonjourHost()}:${address.port}/`;
+        if (!network.includes(url)) network.push(url);
+      }, 0);
+    });
+  },
+});
 
 const coopCoepHeaders = {
   'Cross-Origin-Opener-Policy': 'same-origin',
@@ -52,7 +91,16 @@ export default defineConfig(() => {
   return ({
   base,
   plugins: [
-    qrcode(),
+    hostnameNetworkUrl(),
+    qrcode({
+      filter: (url) => {
+        try {
+          return new URL(url).hostname.endsWith('.local');
+        } catch {
+          return false;
+        }
+      },
+    }),
     react(),
     createHtmlPlugin({
       inject: {
@@ -108,7 +156,7 @@ export default defineConfig(() => {
       srcDir: 'src/service-worker',
       filename: 'coi-sw.ts',
       injectManifest: {
-        globPatterns: ['**/*.{js,css,html,wasm,ico,png,svg,webmanifest}'],
+        globPatterns: ['**/*.{js,css,html,wasm,ico,png,svg,webmanifest,woff2}'],
         globIgnores: ['**/coi-sw.js'],
       },
     }),
@@ -123,6 +171,8 @@ export default defineConfig(() => {
   },
   preview: {
     headers: coopCoepHeaders,
+    host: true,
+    https: httpsConfig,
   },
 });
 });

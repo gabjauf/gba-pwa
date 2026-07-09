@@ -1105,13 +1105,15 @@ input[type='range'] {
     display: block;
     padding: 0;
     pointer-events: none;
-    --touch-inset-left: calc(env(safe-area-inset-left) + 18px);
-    --touch-inset-right: calc(env(safe-area-inset-right) + 18px);
-    --touch-inset-bottom: calc(env(safe-area-inset-bottom) + 18px);
-    --touch-dpad-arm: clamp(56px, 12vh, 74px);
-    --touch-control-opacity: 0.52;
-    --touch-actions-opacity: 0.62;
-    --touch-meta-opacity: 0.72;
+    /* Floors clear the iOS home-indicator (bottom) and Safari edge-swipe
+       (left/right) gesture zones even when env() insets resolve to 0. */
+    --touch-inset-left: calc(env(safe-area-inset-left) + 30px);
+    --touch-inset-right: calc(env(safe-area-inset-right) + 30px);
+    --touch-inset-bottom: calc(env(safe-area-inset-bottom) + 30px);
+    --touch-dpad-arm: clamp(58px, 15vh, 76px);
+    --touch-control-opacity: 0.68;
+    --touch-actions-opacity: 0.78;
+    --touch-meta-opacity: 0.82;
     --touch-shoulder-bottom: calc(
       var(--touch-inset-bottom) + (var(--touch-dpad-arm) * 3) + 24px
     );
@@ -1182,11 +1184,13 @@ input[type='range'] {
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
-    bottom: var(--touch-inset-bottom);
+    /* Top-centre: keeps Select/Start clear of both thumb clusters and the
+       home indicator (they shared the bottom row and overlapped the D-pad/A-B). */
+    top: calc(env(safe-area-inset-top) + 10px);
     display: flex;
     justify-content: center;
     gap: 10px;
-    width: min(64vw, 420px);
+    width: min(48vw, 300px);
     opacity: var(--touch-meta-opacity);
     z-index: 3;
     border: 1px solid rgba(255, 255, 255, 0.04);
@@ -1203,8 +1207,8 @@ input[type='range'] {
   }
 
   .play-panel.gameboy-view .actions button {
-    width: clamp(66px, 14vh, 92px);
-    height: clamp(66px, 14vh, 92px);
+    width: clamp(76px, 16vh, 104px);
+    height: clamp(76px, 16vh, 104px);
     min-height: 0;
     border-radius: 999px;
     padding: 0;

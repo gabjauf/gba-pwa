@@ -89,8 +89,10 @@
       }
     },
     (err) => {
-      if (!coi.quiet)
-        console.error('COOP/COEP Service Worker failed to register:', err);
+      if (!coi.quiet){
+        console.error('COOP/COEP Service Worker failed to register:');
+        console.error(err);
+      }
     },
   );
 })();

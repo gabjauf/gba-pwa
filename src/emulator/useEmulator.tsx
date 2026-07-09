@@ -20,7 +20,7 @@ async function initialize(canvas: HTMLCanvasElement) {
 
 export function getEmulator(canvas: HTMLCanvasElement): Promise<mGBAEmulator | null> {
   if (instance) return Promise.resolve(instance);
-  return initialize(canvas)
+  return initialize(canvas);
 }
 
 export const EmulatorContext = ({ children }: { children: React.ReactNode }) => {
@@ -29,7 +29,9 @@ export const EmulatorContext = ({ children }: { children: React.ReactNode }) => 
 
   useEffect(() => {
     if (!canvasRef.current) return;
-    getEmulator(canvasRef.current).then(setEmulator);
+    getEmulator(canvasRef.current)
+      .then(setEmulator)
+      .catch((err) => console.error('mGBA core failed to initialise:', err));
   }, [canvasRef.current]);
 
   return (<GBAContext value={{ canvas: canvasRef.current, emulator }
