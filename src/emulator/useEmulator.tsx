@@ -13,6 +13,11 @@ async function initialize(canvas: HTMLCanvasElement) {
     await mod.FSInit();
     mod.toggleInput(false);
     instance = mod;
+    // Dev-only test seam: lets e2e specs spy on the exact emulator instance the
+    // components call (buttonPress/buttonUnpress). Stripped from prod builds.
+    if (import.meta.env.DEV) {
+      (globalThis as Record<string, unknown>).__gbaEmulator = mod;
+    }
     return mod;
   })
   return instance

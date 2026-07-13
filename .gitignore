@@ -15,6 +15,11 @@ certs/
 *.pem
 *.key
 
+# Playwright / playwright-bdd
+test-results/
+playwright-report/
+.features-gen/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
