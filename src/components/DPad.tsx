@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef } from 'react';
 import { IconDPadArrow } from './Icons';
+import { useReleaseOnInterrupt } from './useReleaseOnInterrupt';
 
 export type DPadDirection = 'up' | 'down' | 'left' | 'right';
 
@@ -84,6 +85,12 @@ const DPad = ({ onPress, onUnpress, disabled, className }: DPadProps) => {
     [applyDirs],
   );
 
+  const releaseAll = useCallback(() => {
+    for (const pointerId of pointerDirsRef.current.keys()) applyDirs(pointerId, []);
+  }, [applyDirs]);
+
+  useReleaseOnInterrupt(releaseAll);
+
   const handlePointerEvent = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
       if (disabled) return;
@@ -116,6 +123,9 @@ const DPad = ({ onPress, onUnpress, disabled, className }: DPadProps) => {
         clearPointer(event.pointerId);
       },
       onPointerLeave: (event: React.PointerEvent<HTMLDivElement>) => {
+        clearPointer(event.pointerId);
+      },
+      onLostPointerCapture: (event: React.PointerEvent<HTMLDivElement>) => {
         clearPointer(event.pointerId);
       },
     }),

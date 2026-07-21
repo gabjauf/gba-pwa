@@ -49,6 +49,43 @@ describe('ActionPad', () => {
     expect(onUnpress).toHaveBeenCalledWith('a');
   });
 
+  it('releases a held button when the window loses focus mid-press', () => {
+    const onPress = vi.fn();
+    const onUnpress = vi.fn();
+    const { getByLabelText, container } = render(
+      <ActionPad onPress={onPress} onUnpress={onUnpress} />,
+    );
+    const pad = getByLabelText('Action buttons') as HTMLElement;
+    const buttons = container.querySelectorAll('button');
+    mockRect(buttons[0] as HTMLElement, { left: 100, top: 160, width: 80, height: 80 });
+    mockRect(buttons[1] as HTMLElement, { left: 190, top: 120, width: 80, height: 80 });
+
+    fireEvent.pointerDown(pad, { clientX: 140, clientY: 200, pointerId: 1 });
+    expect(onPress).toHaveBeenCalledWith('b');
+
+    // No pointerup arrives — the tab was backgrounded / focus was stolen.
+    fireEvent.blur(window);
+    expect(onUnpress).toHaveBeenCalledWith('b');
+  });
+
+  it('releases a held button when pointer capture is lost without a pointerup', () => {
+    const onPress = vi.fn();
+    const onUnpress = vi.fn();
+    const { getByLabelText, container } = render(
+      <ActionPad onPress={onPress} onUnpress={onUnpress} />,
+    );
+    const pad = getByLabelText('Action buttons') as HTMLElement;
+    const buttons = container.querySelectorAll('button');
+    mockRect(buttons[0] as HTMLElement, { left: 100, top: 160, width: 80, height: 80 });
+    mockRect(buttons[1] as HTMLElement, { left: 190, top: 120, width: 80, height: 80 });
+
+    fireEvent.pointerDown(pad, { clientX: 140, clientY: 200, pointerId: 1 });
+    expect(onPress).toHaveBeenCalledWith('b');
+
+    fireEvent.lostPointerCapture(pad, { pointerId: 1 });
+    expect(onUnpress).toHaveBeenCalledWith('b');
+  });
+
   it('presses both when in between A and B', () => {
     const onPress = vi.fn();
     const onUnpress = vi.fn();

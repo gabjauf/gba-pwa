@@ -38,6 +38,35 @@ describe('DPad', () => {
     expect(onUnpress).toHaveBeenCalledWith('right');
   });
 
+  it('releases a held direction when the window loses focus mid-press', () => {
+    const onPress = vi.fn();
+    const onUnpress = vi.fn();
+    const { getByLabelText } = render(<DPad onPress={onPress} onUnpress={onUnpress} />);
+    const dpad = getByLabelText('D-pad') as HTMLElement;
+    mockRect(dpad);
+
+    fireEvent.pointerDown(dpad, { clientX: 250, clientY: 150, pointerId: 1 });
+    expect(onPress).toHaveBeenCalledWith('right');
+
+    // No pointerup arrives — the tab was backgrounded / focus was stolen.
+    fireEvent.blur(window);
+    expect(onUnpress).toHaveBeenCalledWith('right');
+  });
+
+  it('releases a held direction when pointer capture is lost without a pointerup', () => {
+    const onPress = vi.fn();
+    const onUnpress = vi.fn();
+    const { getByLabelText } = render(<DPad onPress={onPress} onUnpress={onUnpress} />);
+    const dpad = getByLabelText('D-pad') as HTMLElement;
+    mockRect(dpad);
+
+    fireEvent.pointerDown(dpad, { clientX: 250, clientY: 150, pointerId: 1 });
+    expect(onPress).toHaveBeenCalledWith('right');
+
+    fireEvent.lostPointerCapture(dpad, { pointerId: 1 });
+    expect(onUnpress).toHaveBeenCalledWith('right');
+  });
+
   it('supports diagonals and updates on move', () => {
     const onPress = vi.fn();
     const onUnpress = vi.fn();

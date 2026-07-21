@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef } from 'react';
+import { useReleaseOnInterrupt } from './useReleaseOnInterrupt';
 
 export type ActionButton = 'a' | 'b';
 
@@ -90,6 +91,12 @@ const ActionPad = ({ onPress, onUnpress, disabled, className }: ActionPadProps) 
     [applyButtons],
   );
 
+  const releaseAll = useCallback(() => {
+    for (const pointerId of pointerButtonsRef.current.keys()) applyButtons(pointerId, []);
+  }, [applyButtons]);
+
+  useReleaseOnInterrupt(releaseAll);
+
   const handlePointerEvent = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
       if (disabled) return;
@@ -123,6 +130,9 @@ const ActionPad = ({ onPress, onUnpress, disabled, className }: ActionPadProps) 
         clearPointer(event.pointerId);
       },
       onPointerLeave: (event: React.PointerEvent<HTMLDivElement>) => {
+        clearPointer(event.pointerId);
+      },
+      onLostPointerCapture: (event: React.PointerEvent<HTMLDivElement>) => {
         clearPointer(event.pointerId);
       },
     }),
