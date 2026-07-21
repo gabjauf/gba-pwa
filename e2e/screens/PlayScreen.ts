@@ -25,6 +25,35 @@ export class PlayScreen {
     return expect(this.page.getByRole('button', { name: control })).toBeVisible();
   }
 
+  // --- Audio lifecycle (the dev-only __gbaEmulator seam) ------------------
+
+  /** Spy on resumeAudio so we can assert the app wakes audio on foreground. */
+  recordAudioResumes() {
+    return this.page.evaluate(() => {
+      const w = window as unknown as {
+        __gbaEmulator: { resumeAudio: () => void };
+        __audioResumes: number;
+      };
+      const emu = w.__gbaEmulator;
+      w.__audioResumes = 0;
+      const resume = emu.resumeAudio.bind(emu);
+      emu.resumeAudio = () => (w.__audioResumes++, resume());
+    });
+  }
+
+  /** Simulate the tab/PWA coming back to the foreground. */
+  returnFromBackground() {
+    return this.page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  }
+
+  expectAudioResumed() {
+    return expect
+      .poll(() =>
+        this.page.evaluate(() => (window as unknown as { __audioResumes: number }).__audioResumes)
+      )
+      .toBeGreaterThan(0);
+  }
+
   expectNoSavedSlots() {
     return expect(this.enabledSaveSlots()).toHaveCount(0);
   }

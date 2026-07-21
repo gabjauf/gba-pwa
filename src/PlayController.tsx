@@ -336,6 +336,22 @@ const PlayController = () => {
     emulator.setVolume(volume);
   }, [volume]);
 
+  // Browsers suspend the Web Audio context while the PWA is backgrounded (iOS
+  // marks it 'interrupted'), and nothing wakes it on return. Resume on the way
+  // back to the foreground unless the player paused before leaving.
+  useEffect(() => {
+    if (!emulator) return;
+    const resumeIfVisible = () => {
+      if (document.visibilityState !== 'visible' || isPaused) return;
+      const ctx = emulator.SDL2?.audioContext;
+      if (ctx && ctx.state !== 'running') void ctx.resume();
+      emulator.resumeAudio();
+      emulator.resumeGame();
+    };
+    document.addEventListener('visibilitychange', resumeIfVisible);
+    return () => document.removeEventListener('visibilitychange', resumeIfVisible);
+  }, [emulator, isPaused]);
+
   useEffect(() => {
     if (!emulator) return;
     emulator.setCoreSettings({
